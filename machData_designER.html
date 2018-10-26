@@ -4,82 +4,41 @@
 
 
 var jsonMD = {};
+var jsonData = '';
 
 jsonMD.property = 'newValue';
 jsonMD.tableName = 'tableName';
 jsonMD['tableName'] = 'scoobieTable';
-
 jsonMD.anotherProp = [];
 jsonMD.anotherProp.push('somethingElse');
 jsonMD.anotherProp.push('somethingElse2');
 
-var jsonTxt = JSON.stringify(jsonMD);
+var jsonMDTxt = JSON.stringify(jsonMD);
 
-function downloadFile(name) {
-  const a = document.createElement('a');
-  const type = name.split(".").pop();
-  a.href = URL.createObjectURL( new Blob([jsonTxt], { type:`text/${type === "txt" ? "plain" : type}` }) );
-  a.download = name;
-  a.click();
-
-
-//document.getElementById('showIt').innerHTML = jsonTxt + '....' + jsonData;
-}
-
-
-</script>
-<body>
-
-
-<h1>create json file : parameter to mach data</h1>
-
-<p>My first paragraph.</p>
-<br>
-<br>
-
-<br>
-<button id='btn' onclick="downloadFile('scoobie.json')">boom to download a var</button>
-
-<table>
-<tr><td>
-and this is a test
-</td></tr>
-<tr><td>
-and this is a test
-</td></tr>
-<tr><td>
-and this is a test
-</td></tr>
-<tr><td>
-and this is a test
-</td></tr>
-</table>
-<br>
--------------------------------------------------------------------
-<br>
-<div id='showIt'></div>
-<br>
--------------------------------------------------------------------
-<br>
-
-
-upload a file to a var<input type="file" id="fileinput" />
-<script type="text/javascript">
-
-var jsonData = ''
-
+  function doDownloadFile(name) {
+  
+	var jsonStr = JSON.stringify(doTableToJSON('tbl_desc'))
+	
+	const a = document.createElement('a');
+	const type = name.split(".").pop();
+	a.href = URL.createObjectURL( new Blob([jsonStr], { type:`text/${type === "txt" ? "plain" : type}` }) );
+	a.download = name;
+	a.click();
+	document.getElementById('div_keys').innerHTML = jsonMDTxt + '....' + jsonData;
+  } // doDownloadFile
+  
   function readSingleFile(evt) {
     //Retrieve the first (and only!) File from the FileList object
     var f = evt.target.files[0]; 
-
+  
     if (f) {
       var r = new FileReader();
       r.onload = function(e) { 
 	      var contents = e.target.result;
-		  document.getElementById('showIt').innerHTML = contents;
+		  document.getElementById('div_keys').innerHTML = contents;
 		  jsonData = contents;
 		/*
-		    alert( "Got the file.n" 
+		    alert( "Got the file" 
               +"name: " + f.name + "n"
               +"type: " + f.type + "n"
               +"size: " + f.size + " bytes" + "n"
@@ -90,12 +49,516 @@ var jsonData = ''
     } else { 
       alert("Failed to load file");
     }
-  }
+  } // readSingleFile
+  
+  
+  // ================================================================================================= //
+  
+  
+	var domainTable = {}
+	domainTable.int = 'integer'
+	domainTable.vstr20 = 'varchar(20)'
+	domainTable.vstr80 = 'varchar(80)'
+	domainTable.vstr128 = 'varchar(128)'
+	domainTable.dtetm = 'datetime'
+	domainTable.phone = 'varchar(20)'
+	domainTable.email = 'varchar(40)'
+	domainTable.address = 'varchar(128)'
+	domainTable.full_name = 'varchar(128)'
+	domainTable.dob = 'datetime'
+	
+	var keyTable = {}
+	keyTable.PK    = 'PK'
+	keyTable.FK    = 'FK'
+	keyTable.DK    = 'DK'
+	keyTable.noK   = 'None'
+	
+	
+  var g_tableList = {}
+  var g_editControl = {}
+  
+  function doInitiateVars() {
+	g_editControl.editOn=false;
+	g_editControl.srcTrgMap={'dataTag':{'src':[-1,-1], 'trg':[-1,-1]},
+							 'keyType':{'src':[-1,-1], 'trg':[-1,-1]}}
+							 
+	g_tableList['new_table'] = []
+    g_tableList['new_table'][0] = ['colName', 'dataTag', 'keyType']
+    g_tableList['new_table'][1] = [' ', ' ', ' ']
+	
+  } // doInitiateVars
+ 
+	
+  function doTableToJSON(tblID) {
+	var jsonTbl   = {}
+    var tbl       = document.getElementById(tblID);
+	var rowA      = []
+	var tableName = document.getElementById('txt_tableTitle').value;
+	
+	jsonTbl[tableName] = []
+	
+	var r = 0;
+	for ( c = 0; c < tbl.rows[r].cells.length; c++) {
+		  rowA[c] = tbl.rows[r].cells[c].innerHTML;
+		}
+	jsonTbl[tableName][r] = rowA;
+			
+	for (r = 1; r < tbl.rows.length; r++) {
+	    rowA = [];
+		for ( c = 0; c < tbl.rows[r].cells.length; c++) {
+				if (c == 0) 
+				   { 
+				      rowA[c] = document.getElementById('tbl_desc_colName_'+r).value
+				    }
+				else
+				   { 
+				      rowA[c] = tbl.rows[r].cells[c].innerHTML
+				   }
+				
+			   jsonTbl[tableName][r] = rowA;
+			}
+	} // for r 
+	
+	return jsonTbl
 
-  document.getElementById('fileinput').addEventListener('change', readSingleFile, false);
+	} // doTableToJSON
+	
+	
+ function doShowTable(tblName) {
+ var tblTitle = tblName;
+ var tbl      = g_tableList[tblName]
+ var nrows    = tbl.length
+ var ncols    = tbl[0].length
+ var tblDesc  = "<table id='tbl_desc' border=1 class='tbl_desc'>";
+ 
+/* 
+alert('showtable tblTitle : ' + tblTitle); 
+alert('showtable tbl: ' + tbl); 
+alert('showtable nrows: ' + nrows); 
+alert('showtable ncols: ' + ncols); 
+*/ 
+ document.getElementById('txt_tableTitle').value = tblTitle;
+ 
+	tblDesc = tblDesc + "<tr>"
+	var r = 0;
+	for ( c = 0; c < ncols; c++) {
+			tblDesc = tblDesc + '<th>' + tbl[r][c] + '</th>'
+		}
+	tblDesc = tblDesc + '</tr>'
+	
+	for (r = 1; r < nrows; r++) {
+		tblDesc = tblDesc + "<tr onclick=doEdit(['trg',"+r+"])>"
+		for ( c = 0; c < ncols; c++) {
+				if (c == 0) 
+				   { tblDesc = tblDesc + "<td><input type='text' id='tbl_desc_colName_"+r+"' value=" + tbl[r][c] + "></td>"  }
+				 else
+				   { tblDesc = tblDesc + '<td>' + tbl[r][c] + '</td>' }
+			}
+		tblDesc = tblDesc + '</tr>'	
+    } // for r 
+	tblDesc = tblDesc + '</table>'
+
+    document.getElementById('div_table').innerHTML = tblDesc;
+
+} // doShowTable 	
+
+
+  function doAddTable() {
+    var tableName = document.getElementById('txt_tableTitle').value;
+	
+	if (tableName == 'new_table') {
+		alert('Please name the new table...');
+		return
+	}
+	
+	var jsTbl = doTableToJSON('tbl_desc');
+	
+   Object.assign(g_tableList,jsTbl);
+   doShowControl();
 
   
+  } // doAddTable
+
+
+
+  function doAddDescRow() {
+	var tbl = document.getElementById("tbl_desc");
+
+	var newRow  = tbl.rows.length;
+	var lastRow = newRow - 1;
+	var lastColName = document.getElementById("tbl_desc_colName_"+lastRow);
+	
+	if  ( (lastColName.value.length == 0 ) || (tbl.rows[lastRow].cells[1].innerHTML.length == 0) || (tbl.rows[lastRow].cells[2].innerHTML.length == 0) ) {
+		return
+	}	
+	
+	var row     = tbl.insertRow(-1);
+	var colName = row.insertCell(0);
+    var dataTag = row.insertCell(1);
+	var keyType = row.insertCell(2);
+  
+    row.onclick = (function() {doEdit(['trg',newRow])});
+    colName.innerHTML = "<input type='text' id='tbl_desc_colName_"+newRow+"' value=''>";
+    dataTag.innerHTML = "";
+	keyType.innerHTML = "";
+  
+  } // doAddDescRow
+  
+  
+  function doShowDomain() {
+  	var k = Object.keys(domainTable);
+	var v = Object.values(domainTable);
+   
+	var i = 0;
+	var shw = "<table border=1 id='tbl_domain'>";
+   
+	for ( i = 0; i < k.length; i++) {
+		shw = shw + "<tr onclick=doEdit(['dataTag','src'," + i + ",0])><td>" + k[i] + "<td>" + v[i] + "</tr></td>"
+	}
+	document.getElementById('div_domain').innerHTML = shw + '</table>'
+     
+  } // doShowDomain
+
+
+  function doShowKeys() {
+   
+	var k = Object.keys(keyTable);
+	var v = Object.values(keyTable);
+   
+	var i = 0;
+	var shw = "<table border=1 id='tbl_keys'>";
+   
+	for ( i = 0; i < k.length; i++) {
+		shw = shw + "<tr onclick=doEdit(['keyType','src'," + i + ",1])><td>" + k[i] + "<td>" + v[i] + "</tr></td>"
+	}
+
+	shw = shw + '</table>'
+	document.getElementById('div_keys').innerHTML = shw ;
+
+  } // doShowKeys
+   
+   
+  function doShowControl() {
+
+	var i = 0;
+	var tblNames = Object.keys(g_tableList);
+	var shw = "<table border=1 id='tbl_control'>";
+	shw = shw + "<tr>"
+	for ( i = 0; i < tblNames.length; i++) {
+		shw = shw + "<td onclick=doShowTable('" + tblNames[i] + "')>" + tblNames[i] + "</td>"
+	}
+	shw = shw + "</tr>"
+	shw = shw + '</table>'
+	
+	document.getElementById('div_control').innerHTML = shw ;
+
+  } // doShowControl
+   
+   
+  function doHighLiteTables(cmd) {
+    
+	if (cmd == 'on') { 
+		var border = '3px solid #FFFAAA'; 
+		var src_background = 'green';
+		var trg_background = 'yellow';
+	}
+
+	if (cmd == 'off') { 
+	    var border = '3px solid #73AD21';
+		var src_background = 'white';
+		var trg_background = 'white';
+	}
+	
+//alert(cmd + ' ' + border)		
+	
+	document.getElementById('tbl_keys').style.border       = border;
+	document.getElementById('tbl_keys').style.background   = src_background;
+	
+	document.getElementById('tbl_domain').style.border     = border;
+	document.getElementById('tbl_domain').style.background = src_background;
+	
+	document.getElementById('tbl_desc').style.border       = border;
+	document.getElementById('tbl_desc').style.background   = trg_background;
+	  
+  } // doHighLiteTables
+  
+    
+  function doEdit(cmdArray) { 
+  //alert(src_trg + ' '+ tblName + ' ' + cellVal);
+  //
+  // cmdArray : [0] command ( editOnOff (toggles mode on/off) 
+  //						  dataTag   (enter the src/trg mapping. row,cell pairs and if both are present move the data)
+  //									 'dataTag':{'src':[r,c], 'trg':[r,c]}
+  //						  keyType   (enter the src/trg mapping. row,cell pairs and if both are present move the data)
+  //									 'keyType':{'src':[r,c], 'trg':[r,c]}
+  //
+
+  //alert(cmdArray[0] + ' '+ g_editControl.editOn)
+  
+  var dataTag_complete = false
+  var keyType_complete = false
+  
+  if (cmdArray[0] == 'toggleEdit') {
+
+	if (g_editControl.editOn) { 
+		g_editControl.editOn = false;
+		doHighLiteTables('off')
+		document.getElementById("btn_doEdit").value='Edit Off';
+	}
+	else
+	{	g_editControl.editOn = true;
+		doHighLiteTables('on')
+		document.getElementById("btn_doEdit").value='Edit On';
+	}
+	} // toggleEdit
+ 
+  if (cmdArray[0] == 'dataTag') {
+ 
+		if (cmdArray[1] == 'src') {
+			g_editControl.srcTrgMap['dataTag']['src'][0] = cmdArray[2];
+			g_editControl.srcTrgMap['dataTag']['src'][1] = cmdArray[3];
+		} // dataTage source row,cell
+			
+		if (cmdArray[1] == 'trg') {
+			g_editControl.srcTrgMap['dataTag']['trg'][0] = cmdArray[2];
+			g_editControl.srcTrgMap['dataTag']['trg'][1] = cmdArray[3];
+		} // dataTage target row,cell
+			
+	   } // dataTag
+  
+  if (cmdArray[0] == 'keyType') {
+ 
+		if (cmdArray[1] == 'src') {
+			g_editControl.srcTrgMap['keyType']['src'][0] = cmdArray[2];
+			g_editControl.srcTrgMap['keyType']['src'][1] = cmdArray[3];
+		} // dataTage source row,cell
+			
+		if (cmdArray[1] == 'trg') {
+			g_editControl.srcTrgMap['keyType']['trg'][0] = cmdArray[2];
+			g_editControl.srcTrgMap['keyType']['trg'][1] = cmdArray[3];
+		} // dataTage target row,cell
+			
+	   } // dataTag
+	   
+
+  if (cmdArray[0] == 'trg') {
+		g_editControl.srcTrgMap['dataTag']['trg'][0] = cmdArray[1];
+		g_editControl.srcTrgMap['dataTag']['trg'][1] = 1;
+
+		g_editControl.srcTrgMap['keyType']['trg'][0] = cmdArray[1];
+		g_editControl.srcTrgMap['keyType']['trg'][1] = 2;
+	} // cmdArray[0] == 'trg'
+
+
+	
+  if ( (g_editControl.srcTrgMap['dataTag']['src'][0] != -1) && (g_editControl.srcTrgMap['dataTag']['trg'][0] != -1) ) {
+		var sr = g_editControl.srcTrgMap['dataTag']['src'][0];
+		var sc = g_editControl.srcTrgMap['dataTag']['src'][1];
+		var tr = g_editControl.srcTrgMap['dataTag']['trg'][0];
+		var tc = g_editControl.srcTrgMap['dataTag']['trg'][1];
+		
+		document.getElementById('tbl_desc').rows[tr].cells[tc].innerHTML = document.getElementById('tbl_domain').rows[sr].cells[sc].innerHTML;
+		dataTag_complete = true	
+		} // process dataTag as source 
+ 	
+	
+  if ( (g_editControl.srcTrgMap['keyType']['src'][0] != -1) && (g_editControl.srcTrgMap['keyType']['trg'][0] != -1) ) {
+		var sr = g_editControl.srcTrgMap['keyType']['src'][0];
+		var sc = g_editControl.srcTrgMap['keyType']['src'][1];
+		var tr = g_editControl.srcTrgMap['keyType']['trg'][0];
+		var tc = g_editControl.srcTrgMap['keyType']['trg'][1];
+		
+		document.getElementById('tbl_desc').rows[tr].cells[tc].innerHTML = document.getElementById('tbl_keys').rows[sr].cells[sc].innerHTML;
+		keyType_complete = true	
+		} // process keyType as source 
+	
+	
+  if (dataTag_complete && keyType_complete && document.getElementById('tbl_desc_colName_'+tr).value.length > 0 ) {
+        // all columns have been filled...turn off edit 
+		g_editControl.editOn = false;
+		doHighLiteTables('off')
+		document.getElementById("btn_doEdit").value='Edit Off';
+		g_editControl.editOn=false;
+	    g_editControl.srcTrgMap={'dataTag':{'src':[-1,-1], 'trg':[-1,-1]},
+							     'keyType':{'src':[-1,-1], 'trg':[-1,-1]}}
+		
+		} //if (dataTag && keyType )
+  } // doEdit
+  
+  
+ 
+ 
+ function doDebug() {
+ 
+
+  alert(JSON.stringify(g_tableList));
+  alert(Object.keys(g_tableList));
+  
+ } // doDebug
+
+  
+  
+ function doOnLoad() {
+   doInitiateVars();
+   document.getElementById('fileinput').addEventListener('change', readSingleFile, false);
+   doShowKeys();
+   doShowDomain();
+   doShowControl();
+   //doShowTable(tableObj);
+
+ }  // doOnLoad
+  
 </script>
+<style>
+
+    div.domain {
+   		width:  200px;
+		height: 300px;
+		margin: auto;
+		border: 3px solid #73AD21;
+		position: absolute; left: 500px; top: 80px; 
+	}
+	
+	div.key {
+   		width:  200px;
+		height: 300px;
+		margin: auto;
+		border: 3px solid #73AD21;
+		position: absolute; left: 720px; top: 80px; 
+	}
+	
+	div.tableTitle {
+   		width:  310px;
+		height: 30px;
+		margin: auto;
+		border: 3px solid #73AD21;
+		position: absolute; left: 50px; top: 200px; 
+	}
+	
+	div.table {
+   		width:  310px;
+		height: 300px;
+		margin: auto;
+		border: 3px solid #73AD21;
+		position: absolute; left: 50px; top: 230px; 
+	}
+	div.edit {
+		width:  310px;
+		height: 30px;
+		margin: auto;
+		border: 3px solid #73AD21;
+		position: absolute; left: 50px; top: 530px; 
+	}
+	
+	div.control {
+   		width:  400px;
+		height: 100px;
+		margin: auto;
+		border: 3px solid #73AD21;
+		position: absolute; left: 20px; top: 80px; 
+	}
+	
+	div.test {
+   		width:  1000px;
+		height: 200px;
+		margin: auto;
+		border: 3px solid #73AD21;
+		position: absolute; left: 20px; top: 650px; 
+	}
+	
+	button.list {
+		width:  100px;
+		height: 30px;
+		border: 3px solid #ccD000;
+	}
+	
+	button.fullSpace {
+		width:  100%;
+		height: 100%;
+		border: 1px solid #ccD000;
+	}
+	
+	table.tbl_01 {
+		border: 1px solid black;
+		width: 100%;
+		padding: 1px;
+	}	
+	
+	table.tblName {
+		width: 100%;
+	}
+
+	table.dataName {
+		width: 100%;
+	}
+
+	table.keyName {
+		width: 100%;
+	}
+	
+	table.tblEdit {
+		width: 100%;
+	}
+	
+	</style>
+
+
+
+<body onload='doOnLoad()'>
+
+
+
+<h1>create json file : parameter to mach data</h1>
+
+
+<br>
+
+<div id='div_control' class='control'></div>
+<div id='div_keys' class='key' >sss</div>
+<div id='div_domain' class='domain' >sss</div>
+
+
+<div id='div_tableTitle' class='tableTitle' >
+	<table>
+		<tr>
+		 <td>
+		   <input type='text' id='txt_tableTitle'  value='' >
+		 </td>
+		</tr>
+    </table> 
+</div> 
+
+
+
+<div id='div_table' class='table' >sss</div>
+
+<div id='div_edit' class='edit' >
+	<table>
+		<tr>
+		 <td>
+		   <input type='button' id='btn_doEdit' class='fullSpace' value='Edit Off' onclick="doEdit(['toggleEdit'])">
+		 </td>
+		 <td>
+		   <input type='button' id='btn_addRow' class='fullSpace' value='Add Row' onclick="doAddDescRow()">
+		 </td>
+		 <td>
+		   <input type='button' id='btn_addTable' class='fullSpace' value='Add Table' onclick="doAddTable()">
+		 </td>
+		</tr>
+    </table> 
+</div> 
+
+<div id='test' class='test' >
+  <br>
+  <button id='btn_dnloadVar' class='list' onclick="doDownloadFile('machData.json')">download</button>
+  <br>
+  <button id='btn_tableToJSON' class='list' onclick="doTableToJSON('tbl_desc')">see key table</button>
+  <br>
+  <button id='btn_changeDisplay' class='list' onclick="doDebug()">DEBUG</button>
+  <br> 
+  <br>
+  ....upload a file to a var <input type="file" id="fileinput" >cccc</input>
+</div>
 
 
 </body>
