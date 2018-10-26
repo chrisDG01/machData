@@ -5,6 +5,9 @@ import random
 import pyodbc
 import subprocess
 import datetime
+#
+# Oct 26/2018 :: this version is the first commited to git machData
+#
 
 global_use_max_DB_ID     = True  # if this is true then the global_id value is set to the max primary table ID in the DB
 global_id_batch_size 	 = 100
