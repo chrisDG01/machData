@@ -5,50 +5,123 @@ import random
 import pyodbc
 import subprocess
 import datetime
-#
-# Oct 26/2018 :: this version is the first commited to git machData
-#
 
-global_use_max_DB_ID     = True  # if this is true then the global_id value is set to the max primary table ID in the DB
-global_id_batch_size 	 = 100
-global_id            	 = 0
-global_num_of_batches	 = 10
-delim_char           	 = '|'
-truncate_and_load 		 = False
 
-people     = ['people_ID,full_name,date_of_birth',
-			  'int,varchar(128),datetime',
-			  'PK,people,people_ID']
-address    = ['addr_type_ID,addr,people_ID',
-			  'int,varchar(128),int',
-			  'FK,address,people_ID']
-email      = ['email_type_ID,email,people_ID',
-			  'int,varchar(80),int',
-			  'FK,email,people_ID']
-phone      = ['phone_type_ID,phone,people_ID',
-			  'int,varchar(80),int',
-			  'FK,phone,people_ID']
-personType = ['people_ID,person_type_ID,start_date,expire_date',
-			  'int,int,datetime,datetime',
-			  'FK,personType,people_ID']
-			  
-first_data_row = 3	
-
+class GlobalVars():
+	def __init__(self):
+		self.use_max_DB_ID		     = True  # if this is true then the global_id value is set to the max primary table ID in the DB
+		self.global_id_batch_size	 = 1
+		self.global_id            	 = 1
+		self.num_of_batches	 		 = 1
+		self.curr_batch_number       = 0
+		self.delim_char           	 = '|'
+		self.truncate_and_load 		 = True
+		self.pkey 					 = 'PK'
+		self.fkey 					 = 'FK'
+		self.dkey 					 = 'DK'
+		# this member will be created after the tables are created.  
+		# which are created from the JSON object defining the relations ( table and column names also defined in the JSON object)
+		self.table_relations		 = []
+	
+	def all_table_list(self):
+		#
+		#  tables can be listed multiple times in the relationship list.  This method
+		#  will return a unique list of tables
+		#
+		all_lst = []
+		rel_lst = global_vars.table_relations
+		processed = {}		# use a dictionary to count unique occurances, ignore duplicate table entries
+		
+		for r in rel_lst:
+			for t in r:
+				num_processed  = len(processed.keys())
+				processed[t.table_name] = 'processed'
+				if num_processed < len(processed.keys()) :
+					all_lst.append(t)
+		return all_lst
+	
+	def incr_global_id(self):
+		self.global_id = self.global_id + 1
+		
+	def incr_batch_count(self):
+		self.curr_batch_number = self.curr_batch_number + 1
+				
+	def all_to_stdout(self):
+		print('==================================================================\n')
+		print('self.use_max_DB_ID 			: {}\n'.format(self.use_max_DB_ID ))		     
+		print('self.global_id_batch_size	: {}\n'.format(self.global_id_batch_size )) 	  
+		print('self.global_id				: {}\n'.format(self.global_id ))      	 
+		print('self.num_of_batches			: {}\n'.format(self.num_of_batches )) 		 
+		print('self.curr_batch_number  		: {}\n'.format(self.curr_batch_number ))    
+		print('self.delim_char   			: {}\n'.format(self.delim_char ))         
+		print('self.truncate_and_load 		: {}\n'.format(self.truncate_and_load ))	 
+		#print('self.table_relations		: {}\n'.format(self.table_relations ))	 
+		print('==================================================================\n')
+		
+class DatabaseTable():
+	def __init__(self,table_name,table_type):
+		self.table_name = table_name
+		self.table_type = table_type
+		self.process_status = ''
+		self.data_types = { 'int'    	: 'integer',
+							'vstr20' 	: 'varchar(20)',
+							'vstr80' 	: 'varchar(80)',
+							'vstr128'	: 'varchar(128)',
+							'dtetm'  	: 'datetime',
+							'phone'	 	: 'varchar(20)',
+							'email' 	: 'varchar(40)',
+							'address'	: 'varchar(128)',
+							'full_name'	: 'varchar(128)',
+							'dob'		: 'datetime'
+						}
+						
+		self.row_desc = {}
+		self.rows     = []
+		self.curr_row = None
+		
+	def clear_all_rows(self):
+		self.rows = []
+		
+	def get_datatype_ddl(self,col_name):
+		return self.data_types[self.row_desc[col_name][0]]
+		
+	def get_table_ddl(self):
+		ddl = [None] * len(self.row_desc)
+		
+		for col_name in self.row_desc.keys():
+			col_dtype    = self.get_datatype_ddl(col_name)
+			col_ord      = self.row_desc[col_name][1]
+			if ddl[col_ord] == None : ddl[col_ord] = [col_name,col_dtype]
+		return ddl	
+	
+	def get_table_desc(self):
+		ddl = [None] * len(self.row_desc)
+		
+		for col_name in self.row_desc.keys():
+			col_dtype    = self.row_desc[col_name][0]
+			col_ord      = self.row_desc[col_name][1]
+			col_keytyp	 = self.row_desc[col_name][2]
+			if ddl[col_ord] == None : ddl[col_ord] = [col_name,col_dtype,col_keytyp]
+		return ddl	
+	
+	def get_index_name_and_col(self):
+		idx_name = ''
+		for col_name in self.row_desc.keys():
+			col_keytyp = self.row_desc[col_name][2]
+			
+			if col_keytyp == 'PK' or col_keytyp == 'DK' : idx_name = 'PK_' + self.table_name
+			if col_keytyp == 'FK' 					    : idx_name = 'FK_' + self.table_name
+			#
+			# return first index column found ... 
+			#
+			if idx_name != '' : 
+				return {'name':idx_name, 'col':col_name}
+		return {}
 
 
 class MockData:
 
     def __init__(self):
-
-        self.entity_type  = {'personType': {'patient': 0, 'anethesiologist': 1, 'surgeon': 2,
-                                            'or_nurse': 3, 'nurse_01': 4},
-                             'email': {'primary':0, 'work':1},
-                             'phone': {'primary':0, 'work':1},
-                             'businessArea': {'scheduling':0, 'patientRecords_All': 1, 'patientRecords_Op': 2 },
-                             'address' : {'primary':0, 'work':1},
-                             'permissionActions' : {'full':0,'read': 1, 'update': 2, 'create':3, 'delete':4 }
-                             }
-
 
         self.name_list    = [['Adam', 'Abel','Amelia','Ava','Alfie,'],
                             ['Bob','Bander'],
@@ -88,22 +161,6 @@ class MockData:
 							['Richmond'],
 							['San Francisco']]
 
-    def get_entity_group_list(self):
-        return list(self.entity_type)
-
-
-    def get_entity_type_list(self):
-        gid = 0
-        rl = []
-
-        for g in self.get_entity_group_list():
-            for t in list(self.entity_type[g]):
-                rl.append([gid, t])
-            gid = gid + 1
-
-        return rl
-
-
     def random_int(self, s,e):
         return random.randint(s,e)
 
@@ -121,23 +178,18 @@ class MockData:
             d = '0' + str(d)
         else:
             d = str(d)
-
         return m + '/' + d + '/' + y
-
-
 
     def random_phone(self):
         a = str(self.random_int(310,760))
 
         b = str(self.random_int(200,900))
         c = str(self.random_int(1000, 9000))
-
         return '(' + a + ')' + b + '-' + c
 
     def random_from_list(self,lst):
         n = len(lst) - 1
         return lst[self.random_int(0, n)]
-
 
     def get_random_string(self,lst):
         l = self.random_from_list(lst)
@@ -146,7 +198,6 @@ class MockData:
     def random_full_name(self):
         f = self.get_random_string(self.name_list)
         l = self.get_random_string(self.name_list)
-
         return f + ' ' + l
 
     def random_addr(self):
@@ -154,7 +205,6 @@ class MockData:
         s = self.get_random_string(self.street_list)
         c = self.get_random_string(self.city_list)
         z = self.random_int(90000, 97000)
-
         return str(n) + ' ' + s + ', ' + c + ' ' + str(z)
 				  		
 		
@@ -191,371 +241,473 @@ class RunDDL_MSSQL:
 		cur.commit()
 		cur.close			  
 	
-	def check_if_object_exists(self, db_obj):
+	def check_if_object_exists(self, t):
 		if not(self.mssql_conn) : self.open_conn()
 		cur = self.mssql_conn.cursor()
-		cur.execute('select 1 from sys.objects where name = \'' + db_obj + '\'')
+		cur.execute('select 1 from sys.objects where name = \'' + t.table_name + '\'')
 		return cur.fetchall()
 			
-	def check_if_index_exists(self, db_obj):
-		if not(self.mssql_conn) : self.open_conn()
-		cur = self.mssql_conn.cursor()
-		cur.execute('select 1 from sys.indexes where name = \'' + db_obj + '\'')
-		return cur.fetchall()
+	def check_if_index_exists(self, t):
+		if t.get_index_name_and_col().keys() :
+			idx_name = t.get_index_name_and_col()['name']
+			
+			if not(self.mssql_conn) : self.open_conn()
+			cur = self.mssql_conn.cursor()
+			cur.execute('select 1 from sys.indexes where name = \'' + idx_name + '\'')
+			ret = cur.fetchall()
+		else:
+			ret = False
+		return ret
 		
 '''
-   start functions 
+   start functions =======================================================================================================
 '''		
 def get_last_id():
-	primary_table_name = 'people'
-	primary_table_ID   = 'people_ID'
+#
+# write a check parent table for last primary id .... this suggests that we only create one PK relation at a time
+# ... so how to handle models with multiple PK's ??  Run this multiple times?
+#
+	primary_table_name	= ''
+	primary_table_ID	= ''
+
+	for t in global_vars.all_table_list():
+		idx = t.get_index_name_and_col()
+		if idx['name'].split('_')[0] == 'PK':
+			primary_table_name = idx['name'].split('_')[1]
+			primary_table_ID   = idx['col']
+			break
+				
 	sql = 'select max(' + primary_table_ID + ') from ' + primary_table_name 
 	
 	runSQL = RunDDL_MSSQL('{SQL Server}','mssql-01.cq79i0ypklbj.us-east-2.rds.amazonaws.com','testEntity','mssql_01_admin','Th3Bomb!')
 	runSQL.open_conn()
 	last_ID = runSQL.run_sql(sql)
 	runSQL.close_conn()
-	
 	return int(last_ID[0][0])
-		
+
+'''	
 def set_next_id():
     global global_id
     global_id = global_id + 1
+'''
 
-def table_ddl(ddl_type,lst):
-	table_name = lst[2].split(',')[1]
+def table_ddl(ddl_type,tbl):
+	table_name = tbl.table_name
+	ddl = tbl.get_table_ddl()
 	
 	if ddl_type == 'CREATE':
 		retstr = 'create table ' + table_name + ' ('
-		colNames = lst[0].split(',')
-		colDTs   = lst[1].split(',')
-		for i in range(len(colNames)):
-			cn  = colNames[i]
-			cdt = colDTs[i]
-			retstr = retstr + cn + ' ' + cdt + ','
 		
-		return retstr[:len(retstr)-1] + ')'
+		for col in ddl:
+			cn  = col[0]
+			cdt = col[1]
+			retstr = retstr + cn + ' ' + cdt + ','
+		return retstr[:-1] + ')'
 		
 	if ddl_type == 'DROP':
-		retstr = 'truncate table ' + table_name + '\n'
-		retstr = retstr + 'drop table ' + table_name + '\n'
+		retstr = 'truncate table ' + table_name + ';\n'
+		retstr = retstr + 'drop table ' + table_name + ';\n'
 	else:
 		retstr = None
-
 	return retstr
 
-def index_ddl(ddl_type,lst):
-	s     = lst[2].split(',')
-	idx_type = s[0]
-	table_name = s[1]
-	idx_col    = s[2]
-	
-	if ddl_type == 'CREATE' : 
-		retstr = 'create index ' + idx_type + '_' + table_name + ' on ' + table_name + ' (' + idx_col + ')'
-		return retstr
-		
-	if ddl_type == 'DROP'   : 
-		retstr = 'drop index ' + table_name + '.' + idx_type + '_' + table_name
-	else : 
-		retstr = None
-	
-	return retstr
 
-	
-def make_mock_data_files():
-	global delim_char
-	global global_id
-	global global_id_batch_size
-	
-	global people 		
-	global address 		
-	global email 		
-	global phone 		
-	global personType 	
-		
-	tlst  = ['people', 'address', 'email', 'phone', 'personType']
-		
-	people = people[:first_data_row]
-	address= address[:first_data_row]
-	email= email[:first_data_row]
-	phone= phone[:first_data_row]
-	personType= personType[:first_data_row]
-	
-	max_loop = global_id + global_id_batch_size
-	
-	print('.... creating data files. starting ID : {}'.format(global_id))
-	
-	while global_id < max_loop:
-		str_gid = str(global_id)
-		
-		row = str_gid + delim_char + md.random_full_name() + delim_char + md.random_date(1945,1985)
-		people.append(row)
-				
-		row = str(md.entity_type['address']['primary'])  + delim_char + md.random_addr() + delim_char + str_gid
-		address.append(row)
-		row = str(md.entity_type['address']['work']) + delim_char + md.random_addr() + delim_char +  str_gid
-		address.append(row)
-		
-		row = str(md.entity_type['email']['primary']) + delim_char + 'primary' + str_gid + '@email.com' + delim_char +  str_gid
-		email.append(row)
-		row = str(md.entity_type['email']['work']) + delim_char + 'work' + str_gid + '@email.com' + delim_char + str_gid
-		email.append(row)
-		
-		row = str(md.entity_type['phone']['primary']) + delim_char + md.random_phone() + delim_char + str_gid
-		phone.append(row)
-		row = str(md.entity_type['phone']['work']) + delim_char + md.random_phone() + delim_char + str_gid
-		phone.append(row)
-		
-		row = str_gid + delim_char + str( md.random_from_list(list(md.entity_type['personType'].values())) ) + delim_char + \
-			md.random_date(2010,2015) + delim_char +  md.random_date(2016,2020)
-		personType.append(row)
-		
-		set_next_id()
-
-	with open("people.csv", "w") as write_file:
-		#write_file.write(people[0]+'\n') 	    
-		for l in people[first_data_row:]: write_file.write(l+'\n')
-
-	with open("address.csv", "w") as write_file:
-		#write_file.write(address[0]+'\n') 	
-		for l in address[first_data_row:]: write_file.write(l+'\n')
-
-	with open("email.csv", "w") as write_file:
-		#write_file.write(email[0]+'\n')
-		for l in email[first_data_row:]: write_file.write(l + '\n')
-
-	with open("phone.csv", "w") as write_file:
-		#write_file.write(phone[0]+'\n')
-		for l in phone[first_data_row:]: write_file.write(l + '\n')
-
-	with open("personType.csv", "w") as write_file:
-		#write_file.write(personType[0]+'\n')
-		for l in personType[first_data_row:]: write_file.write(l + '\n')
-
-	with open('entity_group.csv', 'w') as write_file:
-		#l = 'entity_group_ID, entity_group'
-		#write_file.write(l + '\n')
-
-		i = 0
-		for s in md.get_entity_group_list():
-			l = str(i) + delim_char + s
-			write_file.write(l + '\n')
-			i = i + 1
-
-	with open('entity_type.csv', 'w') as write_file:
-		#l = 'entity_group_ID, entity_type_ID, entity_type'
-		#write_file.write(l + '\n')
-
-		i    = 0
-		cgid = 0
-		for l in md.get_entity_type_list():
-			gid = l[0]
-			if gid != cgid :
-				i = 0
-				cgid = gid
-
-			s   = str(l[0]) + delim_char + str(i) + delim_char + l[1]
-			write_file.write(s + '\n')
-			i = i + 1
-	
-	
-	print('.... creating data files. last ID : {}'.format(global_id))
-	
-	
-	
 def check_tables():
-	tlst  = ['people', 'address', 'email', 'phone', 'personType']
-	tstat = []
-	
-	if len(tlst) == 0 : return None
+	tstat  = []
+	retlst = []
+	all_tables = global_vars.all_table_list()
 	
 	runSQL = RunDDL_MSSQL('{SQL Server}','mssql-01.cq79i0ypklbj.us-east-2.rds.amazonaws.com','testEntity','mssql_01_admin','Th3Bomb!')
-	
 	runSQL.open_conn()
 
-	for t in tlst:
+	for t in all_tables:
 		if not(runSQL.check_if_object_exists(t)) : tstat.append(t)
 	
 	runSQL.close_conn()	
-
-	if tstat == []            : retlst = ['ALL_EXIST']
-	if len(tstat) == len(tlst): retlst = ['NONE_EXIST']
-	if (tstat != [] and len(tstat) != len(tlst)): retlst = tstat
+	if tstat == []: 
+		retlst = ['ALL_EXIST']
+			
+	if len(tstat) == len(all_tables): 
+		retlst = ['NONE_EXIST']
+		
+	if (retlst == []) and (len(tstat) != len(all_tables)): 
+		retlst = tstat
 		
 	return retlst	
 	
 
 
 def check_indexes():
-	tlst  = ['PK_people', 'FK_address', 'FK_email', 'FK_phone', 'FK_personType']
 	tstat = []
-	
-	if len(tlst) == 0 : return None
-	
+	all_tables = global_vars.all_table_list()
 	runSQL = RunDDL_MSSQL('{SQL Server}','mssql-01.cq79i0ypklbj.us-east-2.rds.amazonaws.com','testEntity','mssql_01_admin','Th3Bomb!')
 	runSQL.open_conn()
-
-	for t in tlst:
+    
+	for t in all_tables:
 		if not(runSQL.check_if_index_exists(t)) : tstat.append(t)
 	
 	runSQL.close_conn()	
 
-	if tstat == []            : retlst = ['ALL_EXIST']
-	if len(tstat) == len(tlst): retlst = ['NONE_EXIST']
-	if (tstat != [] and len(tstat) != len(tlst)): retlst = tstat
+	if tstat == []: 
+		retlst = ['ALL_EXIST']
+		
+	if len(tstat) == len(all_tables):
+		retlst = ['NONE_EXIST']
+		
+	if (tstat != [] and len(tstat) != len(all_tables)): 
+		retlst = all_tables
 		
 	return retlst	
 		
 	
 	
 def create_all_tables():
-	tlst  = [people, address, email, phone, personType]
 	do_all = ''
-
-	if len(tlst) == 0 : return None
-
+	for t in global_vars.all_table_list():
+		do_all = do_all + table_ddl('CREATE',t) + ';\n'
+		
+	#print_and_split(do_all)			
 	runSQL = RunDDL_MSSQL('{SQL Server}','mssql-01.cq79i0ypklbj.us-east-2.rds.amazonaws.com','testEntity','mssql_01_admin','Th3Bomb!')
 	runSQL.open_conn()
-	  
-	for t in tlst:
-		#print('in create all tables {} {} len{}'.format(t,tlst, len(tlst)))
-		do_all = do_all + table_ddl('CREATE', t) + ';\n'
-	
 	runSQL.run_ddl(do_all)
 	runSQL.close_conn()	
 	return True	
 	
 
 def create_all_indexes():
-	tlst  = [people, address, email, phone, personType] #, entity_group, entity_type]
 	do_all = ''
-	
-	if len(tlst) == 0 : return None
-	
+	for t in global_vars.all_table_list():
+		idx = t.get_index_name_and_col()
+		do_all = do_all + 'CREATE INDEX ' + idx['name'] + ' on (' + idx['col'] + ');\n'
+		
 	runSQL = RunDDL_MSSQL('{SQL Server}','mssql-01.cq79i0ypklbj.us-east-2.rds.amazonaws.com','testEntity','mssql_01_admin','Th3Bomb!')
 	runSQL.open_conn()
-	  
-	for t in tlst:
-		do_all = do_all + index_ddl('CREATE', t) + ';\n'
-	
 	runSQL.run_ddl(do_all)
 	runSQL.close_conn()	
 	return True	
 		
 	
-
 def drop_all_indexes():
-	tlst  = [people, address, email, phone, personType]
-	do_all = ''
-	
 	index_status = check_indexes()
 	
-	if index_status[0] != 'ALL_EXIST' : 
-		print_and_split('not all indexes found .. {}'.format(index_status))
-		
-	if len(tlst) == 0 : return None
+	if index_status[0] == 'NONE_EXIST' : 
+		return True
 
+	do_all = ''
+	for t in global_vars.all_table_list():
+		do_all = do_all + 'DROP INDEX ' + t.get_index_name_and_col()['name'] + ';\n'
+			
 	runSQL = RunDDL_MSSQL('{SQL Server}','mssql-01.cq79i0ypklbj.us-east-2.rds.amazonaws.com','testEntity','mssql_01_admin','Th3Bomb!')
 	runSQL.open_conn()
-		
-	for t in tlst:
-		do_all = do_all + index_ddl('DROP', t) + '; '
-	#print_and_split(do_all)
 	runSQL.run_ddl(do_all)
 	runSQL.close_conn()	
 	return True	
 	
 	
 def truncate_and_drop_tables():
-	tlst  = [people, address, email, phone, personType]
 	do_all = ''
 	
-	if len(tlst) == 0 : return None
-
+	for t in global_vars.all_table_list():
+		do_all = do_all + table_ddl('DROP',t) + '\n'
+		
 	runSQL = RunDDL_MSSQL('{SQL Server}','mssql-01.cq79i0ypklbj.us-east-2.rds.amazonaws.com','testEntity','mssql_01_admin','Th3Bomb!')
 	runSQL.open_conn()
-		
-	for t in tlst:
-		do_all = do_all + table_ddl('DROP', t) + ';\n'
-		
 	runSQL.run_ddl(do_all)
 	runSQL.close_conn()	
-	return True	
-
+	
 
 def bcp_all_data():
-	global delim_char
-	tlst  = ['people', 'address', 'email', 'phone', 'personType']
-	
-	if len(tlst) == 0 : return None
-		
-	for t in tlst:
-
-		do_bcp = 'bcp ' + t + ' in ' + t + '.csv -Smssql-01.cq79i0ypklbj.us-east-2.rds.amazonaws.com -Umssql_01_admin -PTh3Bomb! -dtestEntity -c -t"'+delim_char+'"'
-
-		print(do_bcp)
+	delim_char = global_vars.delim_char
+	do_all = ''
+	for t in global_vars.all_table_list():
+		do_bcp = 'bcp ' + t.table_name + ' in ' + t.table_name + '.csv -Smssql-01.cq79i0ypklbj.us-east-2.rds.amazonaws.com -Umssql_01_admin -PTh3Bomb! -dtestEntity -c -t"'+delim_char+'"'
 		os.system(do_bcp)
-		
-	return True		
+		if t.table_type == 'domain' : 
+			t.process_status = 'loaded_to_database'
 	
+def define_domain_table(tbl):
+# this is replaced with  a JSON object that defines the domain tables
+#
+# column description list : [data_type, col_order, col_key_type] ; col_key_type : (PK, FK, DK, None) 
+# DK = domain key from domain ( loopup or code ) tables
+#
+	if tbl.table_name == 'd_person_type' :
+		tbl.row_desc['pTypeID']			 = ['int',0, global_vars.dkey]
+		tbl.row_desc['person_type_name'] = ['vstr80',1, None]
+	
+	if tbl.table_name == 'd_email':
+		tbl.row_desc['eTypeID']		   	 = ['int',0, global_vars.dkey]
+		tbl.row_desc['email_type'] 		 = ['vstr20',1, None]
+	
+	if tbl.table_name == 'd_phone':
+		tbl.row_desc['phTypeID']	   	 = ['int',0, global_vars.dkey]
+		tbl.row_desc['phone_type'] 		 = ['vstr20',1, None]
+
+	if tbl.table_name == 'd_biz_action':
+		tbl.row_desc['baTypeID']	   	 = ['int',0, global_vars.dkey]
+		tbl.row_desc['biz_action'] 		 = ['vstr80',1, None]
+
+	if tbl.table_name == 'd_address':
+		tbl.row_desc['addrTypeID']	 	 = ['int',0, global_vars.dkey]
+		tbl.row_desc['address_type'] 	 = ['vstr20',1, None]
+
+	if tbl.table_name == 'd_perm_action':
+		tbl.row_desc['permTypeID']		 = ['int',0, global_vars.dkey]
+		tbl.row_desc['perm_action'] 	 = ['vstr20',1, None]
+
+	
+	
+def populate_domain_table(tbl):
+# this is replaced with  a JSON object that declares the data in the domain tables
+
+	delim_char = global_vars.delim_char
+	
+	if tbl.table_name == 'd_person_type' :
+		tbl.rows.append('0' + delim_char + 'patient')
+		tbl.rows.append('1' + delim_char + 'anethesiologist')
+		tbl.rows.append('2' + delim_char + 'surgeon')
+		tbl.rows.append('3' + delim_char + 'or_nurse')
+	
+	if tbl.table_name == 'd_email':
+		tbl.rows.append('0' + delim_char + 'primary')
+		tbl.rows.append('1' + delim_char + 'work')
+	
+	if tbl.table_name == 'd_phone':
+		tbl.rows.append('0' + delim_char + 'primary')
+		tbl.rows.append('1' + delim_char + 'work')
+
+	if tbl.table_name == 'd_biz_action':
+		tbl.rows.append('0' + delim_char + 'scheduling')
+		tbl.rows.append('1' + delim_char + 'patientRecords_All')
+		tbl.rows.append('2' + delim_char + 'patientRecords_Op')
+
+	if tbl.table_name == 'd_address':
+		tbl.rows.append('0' + delim_char + 'primary')
+		tbl.rows.append('1' + delim_char + 'work')
+
+	if tbl.table_name == 'd_perm_action':
+		tbl.rows.append('0' + delim_char + 'full')
+		tbl.rows.append('1' + delim_char + 'read')
+		tbl.rows.append('2' + delim_char + 'update')
+		tbl.rows.append('3' + delim_char + 'create')
+		tbl.rows.append('4' + delim_char + 'delete')		
+
+def	define_table(tbl):
+# this is replaced with the table / column names and definition defined in a JSON object
+	
+	if tbl.table_name == 'people':
+		tbl.row_desc['peopleID']	 	= ['int',      0, global_vars.pkey]
+		tbl.row_desc['full_name']	 	= ['full_name',1, None]
+		tbl.row_desc['date_of_birth']	= ['dob',      2, None]
+		
+	if tbl.table_name == 'address':
+		tbl.row_desc['addrTypeID']	 	= ['int',      0, global_vars.dkey]
+		tbl.row_desc['peopleID']	 	= ['int',      1, global_vars.fkey]
+		tbl.row_desc['address']	 	    = ['address',  2, None]
+		
+	if tbl.table_name == 'email':
+		tbl.row_desc['eTypeID']	 	    = ['int',      0, global_vars.dkey]
+		tbl.row_desc['peopleID']	 	= ['int',      1, global_vars.fkey]
+		tbl.row_desc['email']	 	    = ['email',  2, None]
+		
+	if tbl.table_name == 'phone':
+		tbl.row_desc['phTypeID']	 	= ['int',      0, global_vars.dkey]
+		tbl.row_desc['peopleID']	 	= ['int',      1, global_vars.fkey]
+		tbl.row_desc['phone_num']	 	= ['phone',  2, None]
+		
+	if tbl.table_name == 'people_by_type':
+		tbl.row_desc['pTypeID']	 	    = ['int',      0, global_vars.dkey]
+		tbl.row_desc['peopleID']	 	= ['int',      1, global_vars.fkey]	
+		
+			
+def clear_all_table_rows():
+	for t in global_vars.all_table_list():
+		if t.table_type != 'domain' : t.clear_all_rows()
+		
+def write_tables_to_file():
+	for t in global_vars.all_table_list():
+		if t.process_status == '' :  
+			with open(t.table_name+'.csv', "w") as write_file:
+				for l in t.rows: write_file.write(str(l)+'\n')
+
+def populate_and_create_relationships():
+	# this will be replaced by a JSON object that describes the tables and maps the relationships
+	# in building the relation list. Assume the global id is static through the entire list read .. 
+	# by enitre list I am refering to the list that contains the relation lists. 
+	# The relatino list is a multi dimesional arry ( list ) of lists. The larger list is what we process usinfg a single 
+	# global id. the global id is incremented with each iteration of the list
+	
+	clear_all_table_rows()
+	max_loop = global_vars.global_id + global_vars.global_id_batch_size
+	while global_vars.global_id < max_loop:
+			
+		for relation_list in global_vars.table_relations:
+				
+			ptbl = relation_list[0]
+						
+			populate_table(ptbl,None)
+				
+			for tbl in relation_list[1:]:
+				populate_table(ptbl,tbl)	
+		
+		global_vars.incr_global_id()
+		#print ('....completed batch number {}'.format(global_vars.global_id - first_batch_id))
+			
+	print ('\nnumber of rows per batch {} \n\n'.format(global_vars.global_id_batch_size))
+		
+		
+def populate_table(ptbl,tbl):
+	if tbl == None : 
+		tname = ''
+	else:
+		tname = tbl.table_name
+
+	if ptbl.table_type == 'domain' and tbl == None : return
+	dkey = ''
+	
+	if ptbl.table_type == 'domain' and tbl != None : 
+		dkey = str(md.random_from_list(ptbl.rows)[0])
+		
+	if ptbl.table_type != 'domain' and tbl == None : tbl = ptbl
+	delim_char = global_vars.delim_char
+	row = ''
+	str_gid = str(global_vars.global_id)
+	
+	for col in 	tbl.get_table_desc():
+		#print ('col :: {} '.format(col))
+		if col[2] == 'PK' or col[2] == 'FK' : row = row + str_gid + delim_char
+		if col[2] == 'DK' : row = row + dkey + delim_char
+		if col[2] == None :
+			if col[1] == 'full_name' : row = row + md.random_full_name() 	 + delim_char  
+			if col[1] == 'dob'       : row = row + md.random_date(1945,1985) + delim_char  
+			if col[1] == 'dtetm'     : row = row + md.random_date(1900,2020) + delim_char  
+			if col[1] == 'address'   : row = row + md.random_addr()			 + delim_char  
+			if col[1] == 'email'     : row = row + str_gid + '@email.com' 	 + delim_char
+			if col[1] == 'phone'     : row = row + md.random_phone()         + delim_char  
+			#if col[1] == 'int'       : row = row + md.random_int(1000,10000) + delim_char  
+			
+	tbl.rows.append(row[:-1])			
 	
 def print_and_split(msg):
 	print(msg)
 	exit(0)
 	
+	
 if __name__ == '__main__':
 	
-	if global_use_max_DB_ID : 
-		global_id = get_last_id() + 1
-		
-	sdt = datetime.datetime.now()
-	
-	print('start time                	: {}'.format(str(sdt)))
-	print('current working directory 	: {}'.format(os.getcwd()))
-	print('using max global ID from DB	: {}'.format(global_use_max_DB_ID))
-	print('global ID starting at     	: {}'.format(global_id))
-	print('batch size                	: {}'.format(global_id_batch_size))
-	print('number of batches         	: {}'.format(global_num_of_batches))
-	print('truncate and load mode    	: {}'.format(truncate_and_load))
-	
+	global_vars = GlobalVars()
 	md = MockData()
-
 	
+	# d_ are domain tables ( aka lookup, drop down ) -- they define the codes of the model
+	# e_ are entity tables -- they describe the items of the model ( ex users, sale_items, item_description )
+	# t_ are transaction tables -- they are the tables that hold the events of the entity tables ( ex sales, scheduling, inventory )
+	#
+	# later we will accpet a JSON object that defines the tables, columns and relationships. From this we will create the
+	# table definitions and domain table data. Then create the table_relations dictionary and run the populate functions 
+	#
+	tname = 'people'
+	ttype = 'parent'
+	table_list = {}
+	table_list[tname] = DatabaseTable(tname,ttype)
+	define_table(table_list[tname])
+	print ('row desc {}'.format(table_list[tname].row_desc))
+	tname = 'address'
+	ttype = 'child'
+	table_list[tname] = DatabaseTable(tname,ttype)
+	define_table(table_list[tname])
+	print ('row desc {}'.format(table_list[tname].row_desc))
+	print_and_split('cya')
+	
+	
+	
+	
+	
+	
+	d_person_type = DatabaseTable('d_person_type', 'domain')
+	d_email       = DatabaseTable('d_email', 'domain')
+	d_phone       = DatabaseTable('d_phone', 'domain')
+	d_biz_action  = DatabaseTable('d_biz_action', 'domain')
+	d_address     = DatabaseTable('d_address', 'domain')
+	d_perm_action = DatabaseTable('d_perm_action', 'domain')
+	
+	#define domain tables - later this data will be obtained from JSON input
+	define_domain_table(d_person_type)
+	define_domain_table(d_email)
+	define_domain_table(d_phone)
+	define_domain_table(d_biz_action)
+	define_domain_table(d_address)
+	define_domain_table(d_perm_action)
+	
+	#populate domain tables - later this data will be obtained from JSON input
+
+	populate_domain_table(d_person_type)
+	populate_domain_table(d_email)
+	populate_domain_table(d_phone)
+	populate_domain_table(d_biz_action)
+	populate_domain_table(d_address)
+	populate_domain_table(d_perm_action)
+	
+	# later this data will be obtained from JSON input
+	
+	people     		   = DatabaseTable('people','parent')
+	address    		   = DatabaseTable('address','child')
+	email      		   = DatabaseTable('email','child')
+	phone      		   = DatabaseTable('phone','child')
+	people_by_type     = DatabaseTable('people_by_type','child')
+	
+
+
+	# later this assignment to global_vars will be from the JSON object that defines the table/column names and thier and relationships
+	# the first table in the list is the primary table in the relationship, the other tables are child relations
+	
+	global_vars.table_relations.append([people])
+	global_vars.table_relations.append([d_address,address])
+	global_vars.table_relations.append([d_email,email])
+	global_vars.table_relations.append([d_phone,phone])
+	global_vars.table_relations.append([d_person_type,people_by_type])
+	
+	# later this data will be obtained from JSON input
+	
+	define_table(people)
+	define_table(address)
+	define_table(email)
+	define_table(phone)
+	define_table(people_by_type)
+	
+	# this will be run after the JSON is parsed and tables defined and in the case of domain tables populated with data
+	# essentially this is where the code will start ( again, after the JSON parse )
+	#
+	
+	if global_vars.use_max_DB_ID : 
+		global_vars.global_id = get_last_id() + 1
+	
+	global_vars.all_to_stdout()	
 	
 	table_status = check_tables()
+	#print_and_split(table_status)
 	
 	if (table_status[0] != 'NONE_EXIST') and (table_status[0] != 'ALL_EXIST') :
 		print('these tables are missing ....{}'.format(table_status))
 		exit(1)
 	
-	if (table_status[0] == 'ALL_EXIST' and truncate_and_load): 
+	if (table_status[0] == 'ALL_EXIST' and global_vars.truncate_and_load): 
 		truncate_and_drop_tables()
 		create_all_tables()
 	
-	if (table_status[0] == 'ALL_EXIST' and not(truncate_and_load)): 
+	if (table_status[0] == 'ALL_EXIST' and not(global_vars.truncate_and_load)): 
 		drop_all_indexes()
 		
 	if (table_status[0] == 'NONE_EXIST'):
 		create_all_tables()
-		
-	nb = 0
-	while nb < global_num_of_batches:
-		print('....batch size                   : {}'.format(global_id_batch_size))
-		print('....number of batches to process : {}'.format(global_num_of_batches))
-		print('....processing batch number      : {}'.format(nb+1))
-		print('....starting ID for this batch   : {}'.format(global_id))
-			
-		make_mock_data_files()
+	
+	while global_vars.curr_batch_number < global_vars.num_of_batches:
+		populate_and_create_relationships()
+		write_tables_to_file()
 		bcp_all_data()
-		nb = nb + 1
+		global_vars.incr_batch_count()
+		global_vars.all_to_stdout()
 		
-	#print_and_split('about to create all indexes')
+	print_and_split('\n\ncya 100')
 	
-	create_all_indexes()
-	
-	edt = datetime.datetime.now()
-	print('start time                : {}'.format(str(sdt)))
-	print('finish time               : {}'.format(str(edt)))
-	
-	print('thats all folks!!')
+		
 	
