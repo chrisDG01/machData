@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<script =javascript>
+
+
+var jsonMD = {};
+
+jsonMD.property = 'newValue';
+jsonMD.tableName = 'tableName';
+jsonMD['tableName'] = 'scoobieTable';
+
+jsonMD.anotherProp = [];
+jsonMD.anotherProp.push('somethingElse');
+jsonMD.anotherProp.push('somethingElse2');
+
+var jsonTxt = JSON.stringify(jsonMD);
+
+function downloadFile(name) {
+  const a = document.createElement('a');
+  const type = name.split(".").pop();
+  a.href = URL.createObjectURL( new Blob([jsonTxt], { type:`text/${type === "txt" ? "plain" : type}` }) );
+  a.download = name;
+  a.click();
+
+
+//document.getElementById('showIt').innerHTML = jsonTxt + '....' + jsonData;
+}
+
+
+</script>
+<body>
+
+
+<h1>create json file : parameter to mach data</h1>
+
+<p>My first paragraph.</p>
+<br>
+<br>
+
+<br>
+<button id='btn' onclick="downloadFile('scoobie.json')">boom to download a var</button>
+
+<table>
+<tr><td>
+and this is a test
+</td></tr>
+<tr><td>
+and this is a test
+</td></tr>
+<tr><td>
+and this is a test
+</td></tr>
+<tr><td>
+and this is a test
+</td></tr>
+</table>
+<br>
+-------------------------------------------------------------------
+<br>
+<div id='showIt'></div>
+<br>
+-------------------------------------------------------------------
+<br>
+
+
+upload a file to a var<input type="file" id="fileinput" />
+<script type="text/javascript">
+
+var jsonData = ''
+
+  function readSingleFile(evt) {
+    //Retrieve the first (and only!) File from the FileList object
+    var f = evt.target.files[0]; 
+
+    if (f) {
+      var r = new FileReader();
+      r.onload = function(e) { 
+	      var contents = e.target.result;
+		  document.getElementById('showIt').innerHTML = contents;
+		  jsonData = contents;
+		/*
+		    alert( "Got the file.n" 
+              +"name: " + f.name + "n"
+              +"type: " + f.type + "n"
+              +"size: " + f.size + " bytes" + "n"
+              + "starts with: " + contents  //.substr(1, contents.indexOf("n"))); 
+		*/  
+      }
+      r.readAsText(f);
+    } else { 
+      alert("Failed to load file");
+    }
+  }
+
+  document.getElementById('fileinput').addEventListener('change', readSingleFile, false);
+
+  
+</script>
+
+
+</body>
+</html>
