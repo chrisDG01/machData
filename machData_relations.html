@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html>
+<script =javascript>
+
+  function doDownloadFile(name) {
+  var jsonStr = JSON.stringify(doTableToJSON('tbl_desc'))
+	
+	const a = document.createElement('a');
+	const type = name.split(".").pop();
+	a.href = URL.createObjectURL( new Blob([jsonStr], { type:`text/${type === "txt" ? "plain" : type}` }) );
+	a.download = name;
+	a.click();
+	//document.getElementById('div_keys').innerHTML = jsonMDTxt + '....' + jsonData;
+  } // doDownloadFile
+  
+  function readSingleFile(evt) {
+    //Retrieve the first (and only!) File from the FileList object
+    var f = evt.target.files[0]; 
+  
+    if (f) {
+      var r = new FileReader();
+      r.onload = function(e) { 
+	      var contents = e.target.result;
+		  document.getElementById('div_keys').innerHTML = contents;
+		  jsonData = contents;
+
+      }
+      r.readAsText(f);
+    } else { 
+      alert("Failed to load file");
+    }
+  } // readSingleFile
+  
+  
+  // ================================================================================================= //
+  
+  
+	var domainTable = {}
+	domainTable.int = 'integer'
+	domainTable.vstr20 = 'varchar(20)'
+	domainTable.vstr80 = 'varchar(80)'
+	domainTable.vstr128 = 'varchar(128)'
+	domainTable.dtetm = 'datetime'
+	domainTable.phone = 'varchar(20)'
+	domainTable.email = 'varchar(40)'
+	domainTable.address = 'varchar(128)'
+	domainTable.full_name = 'varchar(128)'
+	domainTable.dob = 'datetime'
+	
+	var keyTable = {}
+	keyTable.PK    = 'PK'
+	keyTable.FK    = 'FK'
+	keyTable.PDK   = 'PDK'
+	keyTable.FDK   = 'FDK'
+	keyTable.noK   = 'None'
+	
+	
+  var g_tableList    = {}
+  var g_editControl  = {}
+  var g_relationList = {}	// for display and UX list {'parentTable':['childTable'...].  Some redundency will occur - remove these before exporting
+							// to machData.py. on output this structure is : {'parentTableName': [], 'domainTable':['childTable', ...]}
+  
+  function doInitiateVars() {
+
+	g_editControl.childTable = ''
+	g_editControl.parentTable = ''	
+	
+	//
+	// g_tableList will be imported from machData_designER or as an upload ... 
+	//
+	g_tableList.d_address    = []
+    g_tableList.d_address[0] = ['addrID','int','PDK']
+    g_tableList.d_address[1] = ['addressType','vstr80','None']
+	
+	g_tableList.d_phone      = []
+    g_tableList.d_phone[0]   = ['phID','int','PDK']
+	g_tableList.d_phone[1]   = ['phoneType','vstr80','None']
+	
+	g_tableList.people       = []
+    g_tableList.people[0]    = ['peopleID','int','PK']
+    g_tableList.people[1]  	 = ['fullName','full_name','None']
+    g_tableList.people[1]    = ['dob','dob','None']
+	
+	g_tableList.address      = []
+    g_tableList.address[0]   = ['peopleID','int','FK']
+    g_tableList.address[1]   = ['addrID','int','FDK']
+	g_tableList.address[2]   = ['address','vstr128','None']
+	
+	
+	g_tableList.phone      = []
+    g_tableList.phone[0]   = ['peopleID','int','FK']
+    g_tableList.phone[1]   = ['phID','int','FDK']
+	g_tableList.phone[2]   = ['phoneNumber','vstr128','None']
+	
+  } // doInitiateVars
+ 
+	
+  function doTableToJSON(tblID) {
+	var jsonTbl   = {}
+    var tbl       = document.getElementById(tblID);
+	var rowA      = []
+	var tableName = document.getElementById('txt_tableTitle').value;
+	
+	jsonTbl[tableName] = []
+	
+	var r = 0;
+	for ( c = 0; c < tbl.rows[r].cells.length; c++) {
+		  rowA[c] = tbl.rows[r].cells[c].innerHTML;
+		}
+	jsonTbl[tableName][r] = rowA;
+			
+	for (r = 1; r < tbl.rows.length; r++) {
+	    rowA = [];
+		for ( c = 0; c < tbl.rows[r].cells.length; c++) {
+				if (c == 0) 
+				   { 
+				      rowA[c] = document.getElementById('tbl_desc_colName_'+r).value
+				    }
+				else
+				   { 
+				      rowA[c] = tbl.rows[r].cells[c].innerHTML
+				   }
+				
+			   jsonTbl[tableName][r] = rowA;
+			}
+	} // for r 
+	
+	return jsonTbl
+
+	} // doTableToJSON
+	
+ function doGetColNum(tname,keyType) {
+    var tbl      = g_tableList[tname]  
+    var c = 0
+	
+	while (c < tbl.length) {
+		
+		if (tbl[c][2] == keyType )
+			{ return c }
+		else
+			{ c = c + 1 }
+		
+	} // while
+
+    return null
+	
+ } // doGetColNum
+ 
+ function doGetKeyTypes(tname) {
+	var cols      = g_tableList[tname]
+	var colKTypes = {}
+	
+	for (i=0; i<cols.length; i++) { colKTypes[cols[i][2]] = ''; }
+	
+	return Object.keys(colKTypes)
+ } // doGetKeyTypes
+ 
+ 
+ function doCreateParentObj(tname) {
+	var tbl = g_tableList[tname]
+    var shw = ''
+	
+//alert(tbl.length)
+//alert(tbl[0])
+	
+	var pkCol  = doGetColNum(tname, 'PK')
+	if (pkCol == null ) { pkCol = doGetColNum(tname, 'PDK') }
+	
+	if ( pkCol == null ) { return null }
+	
+	shw = "<div><table id='tbl_parent_" + tname + "' class='tbl_parentObj'>"
+	shw = shw + "<tr colspan=4 align='center'><td>" + tname + "</td></tr>"
+	shw = shw + "<tr colspan=2 class='parentObj'><td>" + tbl[pkCol][0] + "</td><td>" + tbl[pkCol][2] + "</td></tr>"
+	shw = shw + "<tr class='parentObj'><td> >> </td><td>child tname</td><td>colname</td><td>keyType</td></tr>"
+	shw = shw + "</table></div>"
+	
+	return shw
+	
+ } // doCreateParentObj
+ 
+ 
+  function doPopulateParentDisplay(tList) {
+	var rc = []
+	var tbl = document.getElementById('tbl_parentTables')
+
+	for ( i = 0; i < tList.length; i++) {
+	
+      	rc = doGetNextCell();
+		tbl.rows[rc[0]].cells[rc[1]].innerHTML = doCreateParentObj(tList[i]);
+
+		} // for		
+
+  } // doPopulateParentDisplay
+   
+  
+ 
+  function doPopulateChildDisplay(tList) {
+
+	var shw = "<table border=1 id='tbl_childTables'>";
+
+	shw = shw + "<tr>"
+	for ( i = 0; i < tList.length; i++) {
+		shw = shw + "<td onclick=doEdit('childTable', '" + tList[i] + "')>" + tList[i] + "</td>"
+	}
+	shw = shw + "</tr>"
+	shw = shw + '</table>'
+	
+	document.getElementById('div_childList').innerHTML = shw ;
+
+  } // doPopulateChildDisplay
+   
+  
+ 
+ function doPopulateAllDisplays() {
+	var tList = Object.keys(g_tableList)
+	var cList = []
+	var pList = []
+	var kt = []
+	var tn = ''
+	var i = 0;
+	
+	for (i=0; i<tList.length; i++) { 
+	  tn = tList[i];
+	  kt = doGetKeyTypes(tn);
+	  if ( kt.includes('PK') || kt.includes('PDK') ) 
+	     {  pList.push(tList[i]) } 
+	  else
+	     {	cList.push(tList[i])   } 
+	} // for
+
+	doPopulateChildDisplay(cList)
+	doPopulateParentDisplay(pList)
+	
+ } // doPopulateAllDisplays
+ 
+
+ function doAddChildToRelation() {
+  
+	var ctname  = g_editControl.childTable
+	var ptname  = g_editControl.parentTable
+	
+	var newRow  = tbl.rows.length;
+	var lastRow = newRow - 1;
+	var lastColName = document.getElementById("tbl_desc_colName_"+lastRow);
+	
+	if  ( (lastColName.value.length == 0 ) || (tbl.rows[lastRow].cells[1].innerHTML.length == 0) || (tbl.rows[lastRow].cells[2].innerHTML.length == 0) ) {
+		return
+	}	
+	
+	var row     = tbl.insertRow(-1);
+	var colName = row.insertCell(0);
+    var dataTag = row.insertCell(1);
+	var keyType = row.insertCell(2);
+  
+    row.onclick = (function() {doEdit(['trg',newRow])});
+    colName.innerHTML = "<input type='text' id='tbl_desc_colName_"+newRow+"' value=''>";
+	
+    dataTag.innerHTML = "";
+	keyType.innerHTML = "";
+  
+	if (tableName == 'new_table') {
+		alert('Please name the new table...');
+		return
+	}
+	
+	var jsTbl = doTableToJSON('tbl_desc');
+	
+   Object.assign(g_tableList,jsTbl);
+   doShowTableList();
+
+  } // doAddChildToRelation
+  
+   
+    
+    
+  function doEdit(cmd, tblName) { 
+//alert('doEdit ' + cmd + ' ' + tblName)
+  
+  
+  if (cmd == 'childTable') { g_editControl.childTable = tblName;	}
+  if (cmd == 'parentTable') { g_editControl.parentTable = tblName;	}
+
+  if (g_editControl.childTable != '' && g_editControl.parentTable != '' ) {
+
+		doAddChildToRelation()
+		g_editControl.childTable = ''
+		g_editControl.parentTable = ''	
+		
+	} //if g_editControl.childTable != '' && g_editControl.parentTable != ''
+	
+  } // doEdit
+  
+  
+ 
+ 
+ function doDebug() {
+
+  alert(JSON.stringify(g_tableList));
+  alert(Object.keys(g_tableList));
+  
+ } // doDebug
+
+  
+  
+ function doGetNextCell() {
+
+	var tbl = document.getElementById('tbl_parentTables');
+	var r = 0
+	var c = 0
+	var fnd = false
+	
+	while (!fnd) {
+
+	  while (r<tbl.rows.length && (!fnd)) {
+	  
+	    c = 0
+		while (c<tbl.rows[0].cells.length && (!fnd)) {
+ 		
+            if  (tbl.rows[r].cells[c].innerHTML != '') 
+				{ c = c + 1 }
+			else	
+				{ fnd = true } 
+		
+		} // while c
+		r = r + 1
+	  } // while r
+      if (!fnd) { r=0; c=0; fnd=true } else {r = r - 1}
+    } // while !(fnd)
+	
+	return [r,c]
+
+ } // doGetNextCell
+  
+ function doPutParentTable() {
+	var nrows = 2
+	var ncols = 4
+	var r     = 0
+	var c     = 0
+	var shw   = ''
+	
+	
+	shw = "<table id='tbl_parentTables' class='parentTable'>"
+	
+	for (r=0; r<nrows; r++) {
+		shw = shw + "<tr>"
+
+		for (c=0; c<ncols; c++) {
+			shw = shw + "<td></td>"
+		} //for c
+		shw = shw + "</tr>"
+
+	} //for r
+//alert(shw)	
+    document.write(shw)
+ } //  doPutParentTable
+  
+
+  
+ function doOnLoad() {
+   doInitiateVars();
+   //doDebug()
+   doPopulateAllDisplays()
+
+   //document.getElementById('fileinput').addEventListener('change', readSingleFile, false);
+   //doShowKeys();
+   //doShowDomain();
+   //doShowTableList();
+   //doShowTable(tableObj);
+
+
+ }  // doOnLoad
+    
+  
+  
+</script>
+<style>
+
+   	div.childList {
+   		width:  500px;
+		height: 150px;
+		margin: auto;
+		border: 3px solid #73AD21;
+		position: absolute; left: 50px; top: 100px; 
+	}
+	div.parentList{
+   		width:  1000px;
+		height: 300px;
+		margin: auto;
+		border: 3px solid #73AD21;
+		position: absolute; left: 50px; top: 275px; 
+	}
+	
+	div.parentObj{
+   		width:  30px;
+		height: 30px;
+		margin: auto;
+		border: 1px solid #cccccc;		
+	}
+		
+	div.test {
+   		width:  1000px;
+		height: 100px;
+		margin: auto;
+		border: 3px solid #73AD21;
+		position: absolute; left: 50px; top: 400px; 
+	}
+		
+	table.parentGrid {
+		border: 1px solid black;
+		width: 100%;
+		padding: 1px;
+	}	
+	
+	table.parentTable {
+		border: 1px solid black;
+		width: 100%;
+		padding: 1px;
+	}	
+	table.parentObj {
+		border: 1px solid black;
+		width: 100%;
+		align-content: center;
+		padding: 1px;
+		
+	}	
+	tr.parentObj {
+		border: 1px solid black;
+		width: 100%;
+		align-content: center;
+		padding: 1px;
+		
+	}
+	button.list {
+		width:  100px;
+		height: 30px;
+		border: 3px solid #ccD000;
+	}
+	
+	button.fullSpace {
+		width:  100%;
+		height: 100%;
+		border: 1px solid #ccD000;
+	}
+		
+</style>
+
+
+
+<body onload='doOnLoad()'>
+
+
+
+<h1>create mach data relations :</h1>
+
+
+<br>
+
+<div id='div_childList' class='childList'></div>
+
+<div id='div_parentList' class='parentList' >
+
+	<script lang='javascript'> doPutParentTable()</script>
+
+</div>
+
+<!--
+<div id='div_domain' class='domain' >sss</div>
+
+
+<div id='div_tableTitle' class='tableTitle' >
+	<table>
+		<tr>
+		 <td>
+		   <input type='text' id='txt_tableTitle'  value='' >
+		 </td>
+		</tr>
+    </table> 
+</div> 
+
+<div id='div_table' class='table' >sss</div>
+
+<div id='div_edit' class='edit' >
+	<table>
+		<tr>
+		 <td>
+		   <input type='button' id='btn_doEdit' class='fullSpace' value='Edit Off' onclick="doEdit(['toggleEdit'])">
+		 </td>
+		 <td>
+		   <input type='button' id='btn_addRow' class='fullSpace' value='Add Row' onclick="doAddDescRow()">
+		 </td>
+		 <td>
+		   <input type='button' id='btn_addTable' class='fullSpace' value='Add Table' onclick="doAddTable()">
+		 </td>
+		</tr>
+    </table> 
+</div> 
+-->
+<div id='test' class='test' >
+  <!--<br>
+  <button id='btn_dnloadVar' class='list' onclick="doDownloadFile('machData.json')">download</button>
+  <br>
+  <button id='btn_tableToJSON' class='list' onclick="doTableToJSON('tbl_desc')">see key table</button>
+  <br>
+  <button id='btn_changeDisplay' class='list' onclick="doDebug()">DEBUG</button>
+  <br> 
+  <br>
+  ....upload a file to a var <input type="file" id="fileinput" >cccc</input>
+  <br><br>
+  -->
+</div>  
+
+	
+
+</body>
+</html>

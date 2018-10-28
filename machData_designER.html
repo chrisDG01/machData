@@ -3,18 +3,11 @@
 <script =javascript>
 
 
-var jsonMD = {};
-var jsonData = '';
-
-jsonMD.property = 'newValue';
-jsonMD.tableName = 'tableName';
-jsonMD['tableName'] = 'scoobieTable';
-jsonMD.anotherProp = [];
-jsonMD.anotherProp.push('somethingElse');
-jsonMD.anotherProp.push('somethingElse2');
-
-var jsonMDTxt = JSON.stringify(jsonMD);
-
+var g_jsonData = '';
+var g_tableList = {}
+var g_editControl = {}
+  
+  
   function doDownloadFile(name) {
   
 	var jsonStr = JSON.stringify(doTableToJSON('tbl_desc'))
@@ -24,7 +17,7 @@ var jsonMDTxt = JSON.stringify(jsonMD);
 	a.href = URL.createObjectURL( new Blob([jsonStr], { type:`text/${type === "txt" ? "plain" : type}` }) );
 	a.download = name;
 	a.click();
-	document.getElementById('div_keys').innerHTML = jsonMDTxt + '....' + jsonData;
+	//document.getElementById('div_keys').innerHTML = jsonMDTxt + '....' + jsonData;
   } // doDownloadFile
   
   function readSingleFile(evt) {
@@ -36,7 +29,7 @@ var jsonMDTxt = JSON.stringify(jsonMD);
       r.onload = function(e) { 
 	      var contents = e.target.result;
 		  document.getElementById('div_keys').innerHTML = contents;
-		  jsonData = contents;
+		  g_jsonData = contents;
 		/*
 		    alert( "Got the file" 
               +"name: " + f.name + "n"
@@ -70,12 +63,11 @@ var jsonMDTxt = JSON.stringify(jsonMD);
 	var keyTable = {}
 	keyTable.PK    = 'PK'
 	keyTable.FK    = 'FK'
-	keyTable.DK    = 'DK'
+	keyTable.PDK   = 'PDK'
+	keyTable.FDK   = 'FDK'
 	keyTable.noK   = 'None'
 	
 	
-  var g_tableList = {}
-  var g_editControl = {}
   
   function doInitiateVars() {
 	g_editControl.editOn=false;
@@ -558,8 +550,10 @@ alert('showtable ncols: ' + ncols);
   <br> 
   <br>
   ....upload a file to a var <input type="file" id="fileinput" >cccc</input>
-</div>
+  <br><br>
+  
 
+	
 
 </body>
 </html>
