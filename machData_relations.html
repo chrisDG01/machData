@@ -235,6 +235,38 @@
  
 
  
+  function doHighLiteTable(tblType, tname, cmd) {
+    var r   = 0;
+	var c   = 0;
+	var fnd = false
+	
+	var cellColor = (cmd == 'on') ? 'blue' : 'white'
+	
+	if (tblType == 'child') {
+		var tbl = document.getElementById('tbl_childTables');
+		
+		while ( r < tbl.rows.length && (!fnd)) { 
+			c = 0;
+			while ( c < tbl.rows[r].cells.length && (!fnd)) {
+				if (tbl.rows[r].cells[c].innerHTML == tname) 
+					{ fnd = true; } 
+				else 
+					{ c++; }
+			} // while c
+			if (!fnd) { r++; }
+		} // while r
+		
+		if (fnd) { tbl.rows[r].cells[c].style.background = cellColor; }
+	} // if child
+	
+	if (tblType == 'parent') {
+		var tbl = document.getElementById('tbl_parent_' + tname);
+		tbl.style.background = cellColor;
+	} // parent
+		  
+  } // doHighLiteTable
+  
+    
  
  function doDeleteChild(ptname, ctname) {
  
@@ -290,36 +322,42 @@
   } // doAddChildToParent
   
    
-    
+  
     
   function doEdit(cmd, tblName) { 
 //alert('doEdit ' + cmd + ' ' + tblName)
   
   
-  if (cmd == 'childTable') { g_editControl.childTable = tblName;	}
-  if (cmd == 'parentTable') { g_editControl.parentTable = tblName;	}
+  if (cmd == 'childTable') { 
+		if (g_editControl.childTable != '') {
+			doHighLiteTable('child',g_editControl.childTable, 'off')
+		}
+		g_editControl.childTable = tblName;
+		doHighLiteTable('child',tblName, 'on') 
+	} // if child
+
+  if (cmd == 'parentTable') { 
+		if (g_editControl.parentTable != '') {
+			doHighLiteTable('child',g_editControl.parentTable, 'off')
+		}
+  
+		g_editControl.parentTable = tblName;	
+		doHighLiteTable('parent',tblName, 'on') 
+	} // if parent
 
   if (g_editControl.childTable != '' && g_editControl.parentTable != '' ) {
-
 		doAddChildToParent( g_editControl.parentTable, g_editControl.childTable )
+        doHighLiteTable('child',  g_editControl.childTable, 'off')
+		doHighLiteTable('parent', g_editControl.parentTable,'off')
 		g_editControl.childTable = ''
 		g_editControl.parentTable = ''	
-		
+
 	} //if g_editControl.childTable != '' && g_editControl.parentTable != ''
 	
   } // doEdit
   
   
  
- 
- function doDebug() {
-
-  alert(JSON.stringify(g_tableList));
-  alert(Object.keys(g_tableList));
-  
- } // doDebug
-
-  
   
  function doGetNextCell() {
 
@@ -388,7 +426,16 @@
 
 
  }  // doOnLoad
-    
+   
+
+ 
+ function doDebug() {
+
+  alert(JSON.stringify(g_tableList));
+  alert(Object.keys(g_tableList));
+  
+ } // doDebug
+
   
   
 </script>
