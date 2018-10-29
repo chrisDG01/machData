@@ -79,7 +79,7 @@
 	g_tableList.people       = []
     g_tableList.people[0]    = ['peopleID','int','PK']
     g_tableList.people[1]  	 = ['fullName','full_name','None']
-    g_tableList.people[1]    = ['dob','dob','None']
+    g_tableList.people[2]    = ['dob','dob','None']
 	
 	g_tableList.address      = []
     g_tableList.address[0]   = ['peopleID','int','FK']
@@ -169,9 +169,9 @@
 	if ( pkCol == null ) { return null }
 	
 	shw = "<div><table id='tbl_parent_" + tname + "' class='tbl_parentObj'>"
-	shw = shw + "<tr colspan=4 ><td>" + tname + "</td></tr>"
+	shw = shw + "<tr colspan=4 ><td onclick=doEdit('parentTable','" + tname + "')>" + tname + "</td></tr>"
 	shw = shw + "<tr colspan=2 class='parentObj'><td>" + tbl[pkCol][0] + "</td><td>" + tbl[pkCol][2] + "</td></tr>"
-	shw = shw + "<tr class='parentObj'><td> >> </td><td>child tname</td><td>colname</td><td>keyType</td></tr>"
+	//shw = shw + "<tr class='parentObj'><td> >> </td><td>child tname</td><td>colname</td><td>keyType</td></tr>"
 	shw = shw + "</table></div>"
 	
 	return shw
@@ -200,7 +200,7 @@
 
 	shw = shw + "<tr>"
 	for ( i = 0; i < tList.length; i++) {
-		shw = shw + "<td onclick=doEdit('childTable', '" + tList[i] + "')>" + tList[i] + "</td>"
+		shw = shw + "<td onclick=doEdit('childTable','" + tList[i] + "')>" + tList[i] + "</td>"
 	}
 	shw = shw + "</tr>"
 	shw = shw + '</table>'
@@ -234,41 +234,60 @@
  } // doPopulateAllDisplays
  
 
- function doAddChildToRelation() {
+ 
+ 
+ function doDeleteChild(ptname, ctname) {
+ 
+	var ptbl = document.getElementById('tbl_parent_'+ptname);
+	var r = 2
+	
+	while ( r < ptbl.rows.length && ptbl.rows[r].cells[1].innerHTML != ctname ) { r++ }
+	
+	if (ptbl.rows[r].cells[1].innerHTML == ctname) 
+		{  ptbl.deleteRow(r); }
+	else 
+		{ alert ('error on delete child ... child table name not found'); }
+ 
+ } //doDeleteChild
+ 
+ 
+ 
+ function doAddChildToParent() {
   
-	var ctname  = g_editControl.childTable
-	var ptname  = g_editControl.parentTable
+	var ctname   = g_editControl.childTable;
+	var ptname   = g_editControl.parentTable;
+	var ptbl     = document.getElementById("tbl_parent_" + ptname);
+//alert('ptbl ['+ptbl.rows[0].cells[0].innerHTML+']')
+//alert('ptbl ['+ptbl.rows[1].cells[1].innerHTML+']')
+ 
+	var pKey     = ptbl.rows[1].cells[1].innerHTML;
+	var ctbl     = g_tableList[ctname];
 	
-	var newRow  = tbl.rows.length;
-	var lastRow = newRow - 1;
-	var lastColName = document.getElementById("tbl_desc_colName_"+lastRow);
+	var row      = ptbl.insertRow(-1);
+	var padCell  = row.insertCell(0);
+	var ctnCell  = row.insertCell(1);
+    var cColName = row.insertCell(2);
+	var cKeyType = row.insertCell(3);
 	
-	if  ( (lastColName.value.length == 0 ) || (tbl.rows[lastRow].cells[1].innerHTML.length == 0) || (tbl.rows[lastRow].cells[2].innerHTML.length == 0) ) {
-		return
-	}	
+	if (pKey == 'PK')  { var fKey = 'FK' }
+	if (pKey == 'PDK') { var fKey = 'FDK' }
 	
-	var row     = tbl.insertRow(-1);
-	var colName = row.insertCell(0);
-    var dataTag = row.insertCell(1);
-	var keyType = row.insertCell(2);
-  
-    row.onclick = (function() {doEdit(['trg',newRow])});
-    colName.innerHTML = "<input type='text' id='tbl_desc_colName_"+newRow+"' value=''>";
 	
-    dataTag.innerHTML = "";
-	keyType.innerHTML = "";
-  
-	if (tableName == 'new_table') {
-		alert('Please name the new table...');
-		return
-	}
+	var ckColNum = doGetColNum(ctname,fKey)
 	
-	var jsTbl = doTableToJSON('tbl_desc');
+    if (ckColNum == null) { alert('Primary key designation not found in parent table ... '); return }	
 	
-   Object.assign(g_tableList,jsTbl);
-   doShowTableList();
+//alert('ctname =[' + ctname + ']  pKey [' + pKey + ']  ckColNum ['+ckColNum+']')
+	
+	row.ondblclick = (function() {doDeleteChild(ptname,ctname)});
+    padCell.innerHTML  = 'o';
+	ctnCell.innerHTML  = ctname;
+//alert('ctbl ['+ctbl[ckColNum][2]+']')
 
-  } // doAddChildToRelation
+	cColName.innerHTML = ctbl[ckColNum][0];
+	cKeyType.innerHTML = ctbl[ckColNum][2];
+	
+  } // doAddChildToParent
   
    
     
@@ -282,7 +301,7 @@
 
   if (g_editControl.childTable != '' && g_editControl.parentTable != '' ) {
 
-		doAddChildToRelation()
+		doAddChildToParent( g_editControl.parentTable, g_editControl.childTable )
 		g_editControl.childTable = ''
 		g_editControl.parentTable = ''	
 		
