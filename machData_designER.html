@@ -7,10 +7,12 @@
 <script =javascript>
 
 
-var g_jsonData = '';
-var g_tableList = {}
+var g_jsonData    = '';
+var g_tableList   = {}
 var g_editControl = {}
-  
+var domainTable   = {}
+var keyTable      = {}
+	 
   
   function doDownloadFile(name) {
   
@@ -52,33 +54,36 @@ var g_editControl = {}
   // ================================================================================================= //
   
   
-	var domainTable = {}
-	domainTable.int = 'integer'
-	domainTable.vstr20 = 'varchar(20)'
-	domainTable.vstr80 = 'varchar(80)'
-	domainTable.vstr128 = 'varchar(128)'
-	domainTable.dtetm = 'datetime'
-	domainTable.phone = 'varchar(20)'
-	domainTable.email = 'varchar(40)'
-	domainTable.address = 'varchar(128)'
-	domainTable.full_name = 'varchar(128)'
-	domainTable.dob = 'datetime'
-	
-	var keyTable = {}
-	keyTable.PK    = 'PK'
-	keyTable.FK    = 'FK'
-	keyTable.PDK   = 'PDK'
-	keyTable.FDK   = 'FDK'
-	keyTable.noK   = 'None'
 	
 	
   
   function doInitiateVars() {
     if (!sessionStorage.jsonStr)  {sessionStorage.jsonStr = ''; }
 	  
+	if  (Object.keys(keyTable) == 0) { 
+		keyTable.PK    = 'PK'
+		keyTable.FK    = 'FK'
+		keyTable.PDK   = 'PDK'
+		keyTable.FDK   = 'FDK'
+		keyTable.noK   = 'None'
+	} //   keyTable
+		  
+	if  (Object.keys(domainTable) == 0) { 
+		domainTable.int = 'integer'
+		domainTable.vstr20 = 'varchar(20)'
+		domainTable.vstr80 = 'varchar(80)'
+		domainTable.vstr128 = 'varchar(128)'
+		domainTable.dtetm = 'datetime'
+		domainTable.phone = 'varchar(20)'
+		domainTable.email = 'varchar(40)'
+		domainTable.address = 'varchar(128)'
+		domainTable.full_name = 'varchar(128)'
+		domainTable.dob = 'datetime'
+	} //   domainTable
+	  
 	g_editControl.editOn=false;
 	g_editControl.srcTrgMap={'dataTag':{'src':[-1,-1], 'trg':[-1,-1]},
-							 'keyType':{'src':[-1,-1], 'trg':[-1,-1]}}
+							'keyType':{'src':[-1,-1], 'trg':[-1,-1]}}
 							 
 	g_tableList['new_table'] = []
     g_tableList['new_table'][0] = ['colName', 'dataTag', 'keyType']
@@ -384,23 +389,33 @@ alert('showtable ncols: ' + ncols);
   } // doEdit
   
   function doRelations() {
-  
+    doPutSession();
 	window.location.href = "machData_relations.html";
   
   } // doRelations
  
  
  
-function doPutSession(val) {
+function doPutSession() {
 
-  sessionStorage.jsonStr = 'this is a JSON string...[' + val + ']'
+  sessionStorage.domainTable = JSON.stringify(domainTable);
+  sessionStorage.keyTable    = JSON.stringify(keyTable);
+ 	
 } //   doPutSession
   
+
+/*  
 function doGetSession() {
 
- alert(sessionStorage.jsonStr);
+ domainTable = JSON.parse(sessionStorage.domainTable);
+ keyTable    = JSON.parse(sessionStorage.keyTable);
+ 
+ //alert(sessionStorage.domainTable);
+ //alert(sessionStorage.keyTable);
+ 
+ 
 } //   doPutSession
-  
+*/  
   
   
  
@@ -588,9 +603,6 @@ function doGetSession() {
 	</td>
 	<td>
 		<button type="button" onclick="doPutSession('scoobie from design')">Put scoobie</button>
-	</td>
-	<td>
-		<button type="button" onclick="doGetSession()">Get scoobie</button>
 	</td>
   </tr>	 
 </table>  

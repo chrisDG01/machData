@@ -38,7 +38,7 @@
   // ================================================================================================= //
   
   
-	var domainTable = {}
+/*	var domainTable = {}
 	domainTable.int = 'integer'
 	domainTable.vstr20 = 'varchar(20)'
 	domainTable.vstr80 = 'varchar(80)'
@@ -56,19 +56,44 @@
 	keyTable.PDK   = 'PDK'
 	keyTable.FDK   = 'FDK'
 	keyTable.noK   = 'None'
+*/	
 	
 	
+  //var domainTable	 = {}
+  //var keyTable	     = {}
   var g_tableList    = {}
   var g_editControl  = {}
   var g_relationList = {}	// for display and UX list {'parentTable':['childTable'...].  Some redundency will occur - remove these before exporting
 							// to machData.py. on output this structure is : {'parentTableName': [], 'domainTable':['childTable', ...]}
   
   function doInitiateVars() {
-
-    if (!sessionStorage.jsonStr)   { sessionStorage.jsonStr = ''; }
-	g_editControl.childTable = ''
+	var errMsg = ''
+	
+    g_editControl.childTable = ''
 	g_editControl.parentTable = ''	
 	
+	if (!sessionStorage.keyTable)   { 
+		errMsg = errMsg + 'keyTable not initilized .. please go to machData_designER to start \n'
+	}
+	else
+	{	
+		keyTable = JSON.parse(sessionStorage.keyTable);
+	}	
+	
+	if (!sessionStorage.domainTable)   { 
+		errMsg = errMsg + 'domainTable not initilized .. please go to machData_designER to start \n'
+	}
+	else
+	{	
+		domainTable = JSON.parse(sessionStorage.domainTable);
+	}	
+	
+	
+	if (errMsg != '' ) { 
+		alert(errMsg);
+		doDesign();
+	}	
+		
 	//
 	// g_tableList will be imported from machData_designER or as an upload ... 
 	//
@@ -416,15 +441,15 @@
  } //  doPutParentTable
   
 function doDesign() {
-  
+    doPutSession();
 	window.location.href = "machData_designER.html";
   
   } // doRelations
   
   
-function doPutSession(val) {
+function doPutSession() {
 
-  sessionStorage.jsonStr = 'this is a JSON string...[' + val + ']'
+  sessionStorage.relations = 'this is a relation thing '
 } //   doPutSession
   
 function doGetSession() {
@@ -600,7 +625,7 @@ xhr.send();
 
   <button id='btn_dnloadVar' class='list' onclick="doDesign()">goto design</button>
   
-<button type="button" onclick="doPutSession('scoobie from relation')">Put scoobie</button>
+<button type="button" onclick="doPutSession()">Put scoobie</button>
 <button type="button" onclick="doGetSession()">Get scoobie</button>
 
   <p id="demo"></p>
