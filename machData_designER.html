@@ -1,5 +1,9 @@
 <!DOCTYPE html>
 <html>
+<head>
+	<title> Testing 1,2,3...design</title>
+</head>	
+<
 <script =javascript>
 
 
@@ -70,6 +74,8 @@ var g_editControl = {}
 	
   
   function doInitiateVars() {
+    if (!sessionStorage.jsonStr)  {sessionStorage.jsonStr = ''; }
+	  
 	g_editControl.editOn=false;
 	g_editControl.srcTrgMap={'dataTag':{'src':[-1,-1], 'trg':[-1,-1]},
 							 'keyType':{'src':[-1,-1], 'trg':[-1,-1]}}
@@ -377,8 +383,26 @@ alert('showtable ncols: ' + ncols);
 		} //if (dataTag && keyType )
   } // doEdit
   
+  function doRelations() {
   
+	window.location.href = "machData_relations.html";
+  
+  } // doRelations
  
+ 
+ 
+function doPutSession(val) {
+
+  sessionStorage.jsonStr = 'this is a JSON string...[' + val + ']'
+} //   doPutSession
+  
+function doGetSession() {
+
+ alert(sessionStorage.jsonStr);
+} //   doPutSession
+  
+  
+  
  
  function doDebug() {
  
@@ -399,6 +423,8 @@ alert('showtable ncols: ' + ncols);
    //doShowTable(tableObj);
 
  }  // doOnLoad
+  
+  
   
 </script>
 <style>
@@ -452,10 +478,10 @@ alert('showtable ncols: ' + ncols);
 	
 	div.test {
    		width:  1000px;
-		height: 200px;
+		height: 100px;
 		margin: auto;
 		border: 3px solid #73AD21;
-		position: absolute; left: 20px; top: 650px; 
+		position: absolute; left: 20px; top: 600px; 
 	}
 	
 	button.list {
@@ -541,19 +567,32 @@ alert('showtable ncols: ' + ncols);
 </div> 
 
 <div id='test' class='test' >
-  <br>
-  <button id='btn_dnloadVar' class='list' onclick="doDownloadFile('machData.json')">download</button>
-  <br>
-  <button id='btn_tableToJSON' class='list' onclick="doTableToJSON('tbl_desc')">see key table</button>
-  <br>
-  <button id='btn_changeDisplay' class='list' onclick="doDebug()">DEBUG</button>
-  <br> 
-  <br>
-  ....upload a file to a var <input type="file" id="fileinput" >cccc</input>
-  <br><br>
-  
-
-	
-
+  <table>
+  <tr>
+	<td>
+		<button id='btn_dnloadVar' class='list' onclick="doDownloadFile('machData.json')">download</button>
+	</td>
+	<td>
+		<button id='btn_tableToJSON' class='list' onclick="doTableToJSON('tbl_desc')">see key table</button>
+	</td>
+	<td>
+		<button id='btn_changeDisplay' class='list' onclick="doDebug()">DEBUG</button>
+	</td>
+		<td>
+		upload a file to a var <input type="file" id="fileinput" >cccc</input>
+	</td>
+  </tr>
+  <tr>
+	<td>
+		<button id='btn_dnloadVar' class='list' onclick="doRelations()">goto relations</button>
+	</td>
+	<td>
+		<button type="button" onclick="doPutSession('scoobie from design')">Put scoobie</button>
+	</td>
+	<td>
+		<button type="button" onclick="doGetSession()">Get scoobie</button>
+	</td>
+  </tr>	 
+</table>  
 </body>
 </html>

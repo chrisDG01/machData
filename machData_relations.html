@@ -1,5 +1,8 @@
 <!DOCTYPE html>
 <html>
+<head>
+	<title> build relation..</title>
+</head>	
 <script =javascript>
 
   function doDownloadFile(name) {
@@ -62,6 +65,7 @@
   
   function doInitiateVars() {
 
+    if (!sessionStorage.jsonStr)   { sessionStorage.jsonStr = ''; }
 	g_editControl.childTable = ''
 	g_editControl.parentTable = ''	
 	
@@ -411,7 +415,38 @@
     document.write(shw)
  } //  doPutParentTable
   
+function doDesign() {
+  
+	window.location.href = "machData_designER.html";
+  
+  } // doRelations
+  
+  
+function doPutSession(val) {
 
+  sessionStorage.jsonStr = 'this is a JSON string...[' + val + ']'
+} //   doPutSession
+  
+function doGetSession() {
+
+ alert(sessionStorage.jsonStr);
+} //   doPutSession
+  
+  
+  
+  
+function testHttpRequest() {
+var xhr = new XMLHttpRequest();
+xhr.open("GET", "testOut.html", true);
+xhr.onreadystatechange = function() {
+  if (xhr.readyState == 4) {
+    // innerText does not let the attacker inject HTML elements.
+    document.getElementById("demo").innerText = xhr.responseText;
+  }
+}
+xhr.send();
+}
+  
   
  function doOnLoad() {
    doInitiateVars();
@@ -516,7 +551,7 @@
 
 
 
-<h1>create mach data relations :</h1>
+<h1>create mach data relations (ver 2.0):</h1>
 
 
 <br>
@@ -562,17 +597,14 @@
 </div> 
 -->
 <div id='test' class='test' >
-  <!--<br>
-  <button id='btn_dnloadVar' class='list' onclick="doDownloadFile('machData.json')">download</button>
-  <br>
-  <button id='btn_tableToJSON' class='list' onclick="doTableToJSON('tbl_desc')">see key table</button>
-  <br>
-  <button id='btn_changeDisplay' class='list' onclick="doDebug()">DEBUG</button>
-  <br> 
-  <br>
-  ....upload a file to a var <input type="file" id="fileinput" >cccc</input>
-  <br><br>
-  -->
+
+  <button id='btn_dnloadVar' class='list' onclick="doDesign()">goto design</button>
+  
+<button type="button" onclick="doPutSession('scoobie from relation')">Put scoobie</button>
+<button type="button" onclick="doGetSession()">Get scoobie</button>
+
+  <p id="demo"></p>
+
 </div>  
 
 	
