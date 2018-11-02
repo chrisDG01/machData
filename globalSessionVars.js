@@ -12,10 +12,7 @@ var g_keyTable      = {}    // declared only here in machData_designER.html. Oth
 function getGlobalVars() {
 
 		
-	if (sessionStorage.g_machData_json) {
-alert('in get GV sess 10 [' + 	sessionStorage.g_machData_json + ']');
-			g_machData_json = JSON.parse(sessionStorage.g_machData_json);
-										}
+	if (sessionStorage.g_machData_json) { g_machData_json = JSON.parse(sessionStorage.g_machData_json);	}
 										
 	if (g_machData_json.g_domainTable)
 		{
@@ -68,7 +65,6 @@ alert('in get GV sess 10 [' + 	sessionStorage.g_machData_json + ']');
 	if (g_machData_json.g_relationList) 	{g_relationList = g_machData_json.g_relationList;}
 
 	
-alert('in get GV sess g_domainTable [' + Object.keys(g_domainTable) + ']')
 	
 } // getGlobalVars	
 
