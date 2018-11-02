@@ -38,7 +38,29 @@
   // ================================================================================================= //
   
   
+/*	var domainTable = {}
+	domainTable.int = 'integer'
+	domainTable.vstr20 = 'varchar(20)'
+	domainTable.vstr80 = 'varchar(80)'
+	domainTable.vstr128 = 'varchar(128)'
+	domainTable.dtetm = 'datetime'
+	domainTable.phone = 'varchar(20)'
+	domainTable.email = 'varchar(40)'
+	domainTable.address = 'varchar(128)'
+	domainTable.full_name = 'varchar(128)'
+	domainTable.dob = 'datetime'
 	
+	var keyTable = {}
+	keyTable.PK    = 'PK'
+	keyTable.FK    = 'FK'
+	keyTable.PDK   = 'PDK'
+	keyTable.FDK   = 'FDK'
+	keyTable.noK   = 'None'
+*/	
+	
+	
+  //var domainTable	 = {}
+  //var keyTable	     = {}
   var g_tableList    = {}
   var g_editControl  = {}
   var g_relationList = {}	// for display and UX list {'parentTable':['childTable'...].  Some redundency will occur - remove these before exporting
@@ -50,11 +72,28 @@
     g_editControl.childTable = ''
 	g_editControl.parentTable = ''	
 	
+	/* 
+		paramaters from machData.py
+		
+	self.use_max_DB_ID		     = True  # if this is true then the global_id value is set to the max primary table ID in the DB
+	self.global_id_batch_size	 = 1
+	self.global_id            	 = 1
+	self.num_of_batches	 		 = 1
+	self.curr_batch_number       = 0
+	self.delim_char           	 = '|'
+	self.truncate_and_load 		 = True
+	
+	*/
+	
+	
+	
+	
 	if (!sessionStorage.keyTable)   { 
 		errMsg = errMsg + 'keyTable not initilized .. please go to machData_designER to start \n'
 	}
 	else
 	{	
+
 		keyTable = JSON.parse(sessionStorage.keyTable);
 	}	
 	
