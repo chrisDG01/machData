@@ -74,74 +74,9 @@
   function doInitiateVars() {
 	var errMsg = ''
 	
-    g_editControl.childTable = ''
-	g_editControl.parentTable = ''	
+	getGlobalVars()
 	
-	/* 
-		paramaters from machData.py
-		
-	self.use_max_DB_ID		     = True  # if this is true then the global_id value is set to the max primary table ID in the DB
-	self.global_id_batch_size	 = 1
-	self.global_id            	 = 1
-	self.num_of_batches	 		 = 1
-	self.curr_batch_number       = 0
-	self.delim_char           	 = '|'
-	self.truncate_and_load 		 = True
-	
-	*/
-	
-	
-	
-	
-	if (!sessionStorage.keyTable)   { 
-		errMsg = errMsg + 'keyTable not initilized .. please go to machData_designER to start \n'
-	}
-	else
-	{	
 
-		keyTable = JSON.parse(sessionStorage.keyTable);
-	}	
-	
-	if (!sessionStorage.domainTable)   { 
-		errMsg = errMsg + 'domainTable not initilized .. please go to machData_designER to start \n'
-	}
-	else
-	{	
-		domainTable = JSON.parse(sessionStorage.domainTable);
-	}	
-	
-	
-	if (errMsg != '' ) { 
-		alert(errMsg);
-		doDesign();
-	}	
-		
-	//
-	// g_tableList will be imported from machData_designER or as an upload ... 
-	//
-	g_tableList.d_address    = []
-    g_tableList.d_address[0] = ['addrID','int','PDK']
-    g_tableList.d_address[1] = ['addressType','vstr80','None']
-	
-	g_tableList.d_phone      = []
-    g_tableList.d_phone[0]   = ['phID','int','PDK']
-	g_tableList.d_phone[1]   = ['phoneType','vstr80','None']
-	
-	g_tableList.people       = []
-    g_tableList.people[0]    = ['peopleID','int','PK']
-    g_tableList.people[1]  	 = ['fullName','full_name','None']
-    g_tableList.people[2]    = ['dob','dob','None']
-	
-	g_tableList.address      = []
-    g_tableList.address[0]   = ['peopleID','int','FK']
-    g_tableList.address[1]   = ['addrID','int','FDK']
-	g_tableList.address[2]   = ['address','vstr128','None']
-	
-	
-	g_tableList.phone      = []
-    g_tableList.phone[0]   = ['peopleID','int','FK']
-    g_tableList.phone[1]   = ['phID','int','FDK']
-	g_tableList.phone[2]   = ['phoneNumber','vstr128','None']
 	
   } // doInitiateVars
  
@@ -463,12 +398,17 @@
  } //  doPutParentTable
   
 function doDesign() {
-    putSession();
+    putGlobalVars();
 	window.location.href = "machData_designER.html";
   
-  } // doRelations
+  } // doDesign
+    
+ 
+function doRelations() {
+    putGlobalVars();
+	window.location.href = "machData_relations.html";
   
-  
+  } // doParameters  
   
   
 function testHttpRequest() {
@@ -587,7 +527,7 @@ xhr.send();
 
 
 
-<h1>create mach data relations (ver 2.0):</h1>
+<h1>create mach data parameters (ver 2.0):</h1>
 
 
 <br>
@@ -635,10 +575,8 @@ xhr.send();
 <div id='test' class='test' >
 
   <button id='btn_dnloadVar' class='list' onclick="doDesign()">goto design</button>
+  <button id='btn_dnloadVar' class='list' onclick="doRelations()">goto relations</button>
   
-<button type="button" onclick="doPutSession()">Put scoobie</button>
-<button type="button" onclick="doGetSession()">Get scoobie</button>
-
   <p id="demo"></p>
 
 </div>  

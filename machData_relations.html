@@ -55,31 +55,7 @@
 	
 	getGlobalVars()
 	
-	/*
-	g_tableList.d_address    = []
-    g_tableList.d_address[0] = ['addrID','int','PDK']
-    g_tableList.d_address[1] = ['addressType','vstr80','None']
-	
-	g_tableList.d_phone      = []
-    g_tableList.d_phone[0]   = ['phID','int','PDK']
-	g_tableList.d_phone[1]   = ['phoneType','vstr80','None']
-	
-	g_tableList.people       = []
-    g_tableList.people[0]    = ['peopleID','int','PK']
-    g_tableList.people[1]  	 = ['fullName','full_name','None']
-    g_tableList.people[2]    = ['dob','dob','None']
-	
-	g_tableList.address      = []
-    g_tableList.address[0]   = ['peopleID','int','FK']
-    g_tableList.address[1]   = ['addrID','int','FDK']
-	g_tableList.address[2]   = ['address','vstr128','None']
-	
-	
-	g_tableList.phone      = []
-    g_tableList.phone[0]   = ['peopleID','int','FK']
-    g_tableList.phone[1]   = ['phID','int','FDK']
-	g_tableList.phone[2]   = ['phoneNumber','vstr128','None']
-	*/
+
 	
   } // doInitiateVars
  
@@ -406,6 +382,12 @@ function doDesign() {
   
   } // doRelations
   
+ 
+function doParameters() {
+    putGlobalVars();
+	window.location.href = "machData_parameters.html";
+  
+  } // doParameters
   
   
  function doOnLoad() {
@@ -560,7 +542,11 @@ function doDesign() {
 
   <button id='btn_dnloadVar' class='list' onclick="doDesign()">goto design</button>
   
+  <button id='btn_dnloadVar' class='list' onclick="doParameters()">goto params</button>
 
+  
+  
+  
   <p id="demo"></p>
 
 </div>  

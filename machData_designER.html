@@ -368,6 +368,12 @@
   } // doRelations
  
  
+  function doParameters() {
+    putGlobalVars();
+	window.location.href = "machData_parameters.html";
+  
+  } // doParameters
+ 
  
  function doDebug() {
  
@@ -490,7 +496,7 @@
 
 
 
-<h1>create json file CDG: parameter to mach data</h1>
+<h1>create design of ER</h1>
 
 
 <br>
@@ -549,6 +555,9 @@
   <tr>
 	<td>
 		<button id='btn_dnloadVar' class='list' onclick="doRelations()">goto relations</button>
+	</td>
+	<td>
+		<button id='btn_dnloadVar' class='list' onclick="doRelations()">goto params</button>
 	</td>
 	
   </tr>	 
