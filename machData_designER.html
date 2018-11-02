@@ -2,29 +2,12 @@
 <html>
 <head>
 	<title> Testing 1,2,3...design</title>
+    <script  src="globalSessionVars.js"></script>
+	
 </head>	
 
 
-
-<script src="globalSessionVars.js"></script>
-<script =javascript>
-
-
-
-function putGlobalVars() {
-
-	var g_machData_json = {};	// holds all json objects ... table diagrams, table relationships, machData.py parameters
-		
-	if (Object.keys(g_domainTable).length 	> 0) {g_machData_json.g_domainTable  = g_domainTable;}
-	if (Object.keys(g_keyTable).length  	> 0) {g_machData_json.g_keyTable 	 = g_keyTable;}
-	if (Object.keys(g_tableList).length 	> 0) {g_machData_json.g_tableList 	 = g_tableList;}
-	if (Object.keys(g_relationList).length 	> 0) {g_machData_json.g_relationList = g_relationList;}
-	if (Object.keys(g_parameters).length 	> 0) {g_machData_json.g_parameters 	 = g_parameters;}
-	
-	sessionStorage.g_machData_json =  JSON.stringify(g_machData_json); 
-
-} // putGlobalVars	
-
+<script>
 
   
   function doDownloadFile(name) {
@@ -130,12 +113,6 @@ function putGlobalVars() {
  var ncols    = tbl[0].length
  var tblDesc  = "<table id='tbl_desc' border=1 class='tbl_desc'>";
  
-/* 
-alert('showtable tblTitle : ' + tblTitle); 
-alert('showtable tbl: ' + tbl); 
-alert('showtable nrows: ' + nrows); 
-alert('showtable ncols: ' + ncols); 
-*/ 
  document.getElementById('txt_tableTitle').value = tblTitle;
  
 	tblDesc = tblDesc + "<tr>"
@@ -385,39 +362,15 @@ alert('showtable ncols: ' + ncols);
   } // doEdit
   
   function doRelations() {
-    doPutSession();
+    putGlobalVars();
 	window.location.href = "machData_relations.html";
   
   } // doRelations
  
  
  
-function doPutSession() {
-
-  sessionStorage.g_domainTable = JSON.stringify(g_domainTable);
-  sessionStorage.g_keyTable    = JSON.stringify(g_keyTable);
- 	
-} //   doPutSession
-  
-
-/*  
-function doGetSession() {
-
- g_domainTable = JSON.parse(sessionStorage.g_domainTable);
- g_g_keyTable    = JSON.parse(sessionStorage.g_g_keyTable);
- 
- //alert(sessionStorage.g_domainTable);
- //alert(sessionStorage.g_g_keyTable);
- 
- 
-} //   doPutSession
-*/  
-  
-  
- 
  function doDebug() {
  
-
   alert(JSON.stringify(g_tableList));
   alert(Object.keys(g_tableList));
   
@@ -431,7 +384,7 @@ function doGetSession() {
    doShowKeys();
    doShowDomain();
    doShowControl();
-   //doShowTable(tableObj);
+  // doShowTable(tableObj);
 
  }  // doOnLoad
   
@@ -529,7 +482,7 @@ function doGetSession() {
 		width: 100%;
 	}
 	
-	</style>
+</style>
 
 
 
@@ -537,7 +490,7 @@ function doGetSession() {
 
 
 
-<h1>create json file : parameter to mach data</h1>
+<h1>create json file CDG: parameter to mach data</h1>
 
 
 <br>
@@ -597,9 +550,7 @@ function doGetSession() {
 	<td>
 		<button id='btn_dnloadVar' class='list' onclick="doRelations()">goto relations</button>
 	</td>
-	<td>
-		<button type="button" onclick="doPutSession('scoobie from design')">Put scoobie</button>
-	</td>
+	
   </tr>	 
 </table>  
 </body>

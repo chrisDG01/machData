@@ -1,9 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title> build relation..</title>
+	<title> build parameters..</title>
+	<script  src="globalSessionVars.js"></script>
 </head>	
 <script =javascript>
+
+
+
+
 
   function doDownloadFile(name) {
   var jsonStr = JSON.stringify(doTableToJSON('tbl_desc'))
@@ -458,21 +463,10 @@
  } //  doPutParentTable
   
 function doDesign() {
-    doPutSession();
+    putSession();
 	window.location.href = "machData_designER.html";
   
   } // doRelations
-  
-  
-function doPutSession() {
-
-  sessionStorage.relations = 'this is a relation thing '
-} //   doPutSession
-  
-function doGetSession() {
-
- alert(sessionStorage.jsonStr);
-} //   doPutSession
   
   
   

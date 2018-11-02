@@ -2,8 +2,13 @@
 <html>
 <head>
 	<title> build relation..</title>
+	 <script  src="globalSessionVars.js"></script>
 </head>	
-<script =javascript>
+<script>
+
+
+
+
 
   function doDownloadFile(name) {
   var jsonStr = JSON.stringify(doTableToJSON('tbl_desc'))
@@ -38,43 +43,19 @@
   // ================================================================================================= //
   
   
-	
+	/*
   var g_tableList    = {}
   var g_editControl  = {}
   var g_relationList = {}	// for display and UX list {'parentTable':['childTable'...].  Some redundency will occur - remove these before exporting
 							// to machData.py. on output this structure is : {'parentTableName': [], 'domainTable':['childTable', ...]}
+  */
   
   function doInitiateVars() {
 	var errMsg = ''
 	
-    g_editControl.childTable = ''
-	g_editControl.parentTable = ''	
+	getGlobalVars()
 	
-	if (!sessionStorage.keyTable)   { 
-		errMsg = errMsg + 'keyTable not initilized .. please go to machData_designER to start \n'
-	}
-	else
-	{	
-		keyTable = JSON.parse(sessionStorage.keyTable);
-	}	
-	
-	if (!sessionStorage.domainTable)   { 
-		errMsg = errMsg + 'domainTable not initilized .. please go to machData_designER to start \n'
-	}
-	else
-	{	
-		domainTable = JSON.parse(sessionStorage.domainTable);
-	}	
-	
-	
-	if (errMsg != '' ) { 
-		alert(errMsg);
-		doDesign();
-	}	
-		
-	//
-	// g_tableList will be imported from machData_designER or as an upload ... 
-	//
+	/*
 	g_tableList.d_address    = []
     g_tableList.d_address[0] = ['addrID','int','PDK']
     g_tableList.d_address[1] = ['addressType','vstr80','None']
@@ -98,6 +79,7 @@
     g_tableList.phone[0]   = ['peopleID','int','FK']
     g_tableList.phone[1]   = ['phID','int','FDK']
 	g_tableList.phone[2]   = ['phoneNumber','vstr128','None']
+	*/
 	
   } // doInitiateVars
  
@@ -419,36 +401,11 @@
  } //  doPutParentTable
   
 function doDesign() {
-    doPutSession();
+    putGlobalVars();
 	window.location.href = "machData_designER.html";
   
   } // doRelations
   
-  
-function doPutSession() {
-
-  sessionStorage.relations = 'this is a relation thing '
-} //   doPutSession
-  
-function doGetSession() {
-
- alert(sessionStorage.jsonStr);
-} //   doPutSession
-  
-  
-  
-  
-function testHttpRequest() {
-var xhr = new XMLHttpRequest();
-xhr.open("GET", "testOut.html", true);
-xhr.onreadystatechange = function() {
-  if (xhr.readyState == 4) {
-    // innerText does not let the attacker inject HTML elements.
-    document.getElementById("demo").innerText = xhr.responseText;
-  }
-}
-xhr.send();
-}
   
   
  function doOnLoad() {
@@ -603,8 +560,6 @@ xhr.send();
 
   <button id='btn_dnloadVar' class='list' onclick="doDesign()">goto design</button>
   
-<button type="button" onclick="doPutSession()">Put scoobie</button>
-<button type="button" onclick="doGetSession()">Get scoobie</button>
 
   <p id="demo"></p>
 
