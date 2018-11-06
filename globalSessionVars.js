@@ -59,6 +59,8 @@ function getGlobalVars(jsonParms) {
 			g_parameters.curr_batch_number       = 0
 			g_parameters.delim_char           	 = '|'
 			g_parameters.truncate_and_load 		 = true
+			g_parameters.write_to_DB 		 	 = false
+			
 		} // else g_parameters
 		
 		

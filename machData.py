@@ -19,7 +19,7 @@ class GlobalVars():
 		self.curr_batch_number		= 0 	if (jsonParms['g_parameters']['curr_batch_number'] 	  == None)	else jsonParms['g_parameters']['curr_batch_number']
 		self.delim_char		     	= '|' 	if (jsonParms['g_parameters']['delim_char']  		  == None)	else jsonParms['g_parameters']['delim_char']
 		self.truncate_and_load		= True 	if (jsonParms['g_parameters']['truncate_and_load']    == None)	else jsonParms['g_parameters']['truncate_and_load']
-
+		self.write_to_DB 			= False	if (jsonParms['g_parameters']['write_to_DB']    	  == None)	else jsonParms['g_parameters']['write_to_DB']
 		self.keys					= jsonParms['g_keyTable']
 		self.table_relations		= []
 	
@@ -54,7 +54,9 @@ class GlobalVars():
 		print('self.num_of_batches			: {}\n'.format(self.num_of_batches )) 		 
 		print('self.curr_batch_number  		: {}\n'.format(self.curr_batch_number ))    
 		print('self.delim_char   			: {}\n'.format(self.delim_char ))         
-		print('self.truncate_and_load 		: {}\n'.format(self.truncate_and_load ))	 
+		print('self.truncate_and_load 		: {}\n'.format(self.truncate_and_load ))	
+		print('self.write_to_DB 			: {}\n'.format(self.write_to_DB ))	
+		
 		#print('self.table_relations		: {}\n'.format(self.table_relations ))	 
 		print('==================================================================\n')
 		
@@ -98,7 +100,7 @@ class DatabaseTable():
 		for col_name in self.row_desc.keys():
 			col_keytyp = self.row_desc[col_name][2]
 			
-			if col_keytyp == global_varskeys['pkey'] : idx_name = global_varskeys['pkey'] + '_' + self.table_name
+			if col_keytyp == global_vars.keys['pkey']  : idx_name = global_vars.keys['pkey']  + '_' + self.table_name
 			if col_keytyp == global_vars.keys['pdkey'] : idx_name = global_vars.keys['pdkey'] + '_' + self.table_name
 			if col_keytyp == global_vars.keys['fkey']  : idx_name = global_vars.keys['fkey']  + '_' + self.table_name
 			if col_keytyp == global_vars.keys['fdkey'] : idx_name = global_vars.keys['fdkey'] + '_' + self.table_name
@@ -762,11 +764,11 @@ if __name__ == '__main__':
 	while global_vars.curr_batch_number < global_vars.num_of_batches:
 		populate_and_create_relationships()
 		write_tables_to_file()
-		bcp_all_data()
+		if (global_vars.write_to_DB) : bcp_all_data()
 		global_vars.incr_batch_count()
 		global_vars.all_to_stdout()
 		
-	print_and_split('\n\ncya 100')
+	print('\n\nrun completed....')
 	
 		
 	
