@@ -9,7 +9,7 @@ var g_domainTable   = {}	// declared only here in machData_designER.html. Others
 var g_keyTable      = {}    // declared only here in machData_designER.html. Others load from session
 	
 	
-function getGlobalVars() {
+function getGlobalVars(jsonParms) {
 
 		
 	if (sessionStorage.g_machData_json) { g_machData_json = JSON.parse(sessionStorage.g_machData_json);	}
@@ -30,6 +30,7 @@ function getGlobalVars() {
 			g_domainTable.address 	= 'varchar(128)'
 			g_domainTable.full_name = 'varchar(128)'
 			g_domainTable.dob 		= 'datetime'
+			
 		} // else g_domain
 	
 	if (g_machData_json.g_keyTable)
@@ -38,10 +39,10 @@ function getGlobalVars() {
 		}
 		else
 		{
-			g_keyTable.PK    = 'PK'
-			g_keyTable.FK    = 'FK'
-			g_keyTable.PDK   = 'PDK'
-			g_keyTable.FDK   = 'FDK'
+			g_keyTable.pkey  = 'PK'
+			g_keyTable.fkey  = 'FK'
+			g_keyTable.pdkey = 'PDK'
+			g_keyTable.fdkey = 'FDK'
 			g_keyTable.noK   = 'None'
 		} // else g_keyTable
 	

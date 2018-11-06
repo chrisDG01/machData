@@ -11,8 +11,10 @@
 
   
   function doDownloadFile(name) {
-  
-	var jsonStr = JSON.stringify(doTableToJSON('tbl_desc'))
+
+    putGlobalVars();
+    if (g_machData_json.g_tableList.new_table) { delete g_machData_json.g_tableList.new_table; }
+	var jsonStr = JSON.stringify(g_machData_json);  
 	
 	const a = document.createElement('a');
 	const type = name.split(".").pop();
@@ -200,7 +202,7 @@
    
 	var k = Object.keys(g_keyTable);
 	var v = Object.values(g_keyTable);
-   
+  alert(k,v) 
 	var i = 0;
 	var shw = "<table border=1 id='tbl_keys'>";
    
@@ -542,9 +544,11 @@
 	<td>
 		<button id='btn_dnloadVar' class='list' onclick="doDownloadFile('machData.json')">download</button>
 	</td>
+	<!-- 
 	<td>
 		<button id='btn_tableToJSON' class='list' onclick="doTableToJSON('tbl_desc')">see key table</button>
 	</td>
+	-->
 	<td>
 		<button id='btn_changeDisplay' class='list' onclick="doDebug()">DEBUG</button>
 	</td>

@@ -1,27 +1,27 @@
 
 import json
 import os
+import sys
 import random
 import pyodbc
 import subprocess
 import datetime
 
 
+
 class GlobalVars():
-	def __init__(self):
-		self.use_max_DB_ID		     = True  # if this is true then the global_id value is set to the max primary table ID in the DB
-		self.global_id_batch_size	 = 1
-		self.global_id            	 = 1
-		self.num_of_batches	 		 = 1
-		self.curr_batch_number       = 0
-		self.delim_char           	 = '|'
-		self.truncate_and_load 		 = True
-		self.pkey 					 = 'PK'
-		self.fkey 					 = 'FK'
-		self.dkey 					 = 'DK'
-		# this member will be created after the tables are created.  
-		# which are created from the JSON object defining the relations ( table and column names also defined in the JSON object)
-		self.table_relations		 = []
+	def __init__(self,jsonParms):
+		
+		self.use_max_DB_ID		    = True 	if (jsonParms['g_parameters']['use_max_DB_ID'] 		  == None)	else jsonParms['g_parameters']['use_max_DB_ID']
+		self.global_id_batch_size	= 1 	if (jsonParms['g_parameters']['global_id_batch_size'] == None)	else jsonParms['g_parameters']['global_id_batch_size']
+		self.global_id		     	= 1 	if (jsonParms['g_parameters']['global_id'] 			  == None) 	else jsonParms['g_parameters']['global_id']
+		self.num_of_batches		    = 1 	if (jsonParms['g_parameters']['num_of_batches']  	  == None)	else jsonParms['g_parameters']['num_of_batches']
+		self.curr_batch_number		= 0 	if (jsonParms['g_parameters']['curr_batch_number'] 	  == None)	else jsonParms['g_parameters']['curr_batch_number']
+		self.delim_char		     	= '|' 	if (jsonParms['g_parameters']['delim_char']  		  == None)	else jsonParms['g_parameters']['delim_char']
+		self.truncate_and_load		= True 	if (jsonParms['g_parameters']['truncate_and_load']    == None)	else jsonParms['g_parameters']['truncate_and_load']
+
+		self.keys					= jsonParms['g_keyTable']
+		self.table_relations		= []
 	
 	def all_table_list(self):
 		#
@@ -59,22 +59,11 @@ class GlobalVars():
 		print('==================================================================\n')
 		
 class DatabaseTable():
-	def __init__(self,table_name,table_type):
+	def __init__(self,table_name,table_type,data_tags):
 		self.table_name = table_name
 		self.table_type = table_type
 		self.process_status = ''
-		self.data_types = { 'int'    	: 'integer',
-							'vstr20' 	: 'varchar(20)',
-							'vstr80' 	: 'varchar(80)',
-							'vstr128'	: 'varchar(128)',
-							'dtetm'  	: 'datetime',
-							'phone'	 	: 'varchar(20)',
-							'email' 	: 'varchar(40)',
-							'address'	: 'varchar(128)',
-							'full_name'	: 'varchar(128)',
-							'dob'		: 'datetime'
-						}
-						
+		self.data_types = data_tags
 		self.row_desc = {}
 		self.rows     = []
 		self.curr_row = None
@@ -109,8 +98,10 @@ class DatabaseTable():
 		for col_name in self.row_desc.keys():
 			col_keytyp = self.row_desc[col_name][2]
 			
-			if col_keytyp == 'PK' or col_keytyp == 'DK' : idx_name = 'PK_' + self.table_name
-			if col_keytyp == 'FK' 					    : idx_name = 'FK_' + self.table_name
+			if col_keytyp == global_varskeys['pkey'] : idx_name = global_varskeys['pkey'] + '_' + self.table_name
+			if col_keytyp == global_vars.keys['pdkey'] : idx_name = global_vars.keys['pdkey'] + '_' + self.table_name
+			if col_keytyp == global_vars.keys['fkey']  : idx_name = global_vars.keys['fkey']  + '_' + self.table_name
+			if col_keytyp == global_vars.keys['fdkey'] : idx_name = global_vars.keys['fdkey'] + '_' + self.table_name
 			#
 			# return first index column found ... 
 			#
@@ -272,7 +263,7 @@ def get_last_id():
 
 	for t in global_vars.all_table_list():
 		idx = t.get_index_name_and_col()
-		if idx['name'].split('_')[0] == 'PK':
+		if idx['name'].split('_')[0] ==  global_vars.keys['pkey']:
 			primary_table_name = idx['name'].split('_')[1]
 			primary_table_ID   = idx['col']
 			break
@@ -317,10 +308,12 @@ def check_tables():
 	retlst = []
 	all_tables = global_vars.all_table_list()
 	
+	
 	runSQL = RunDDL_MSSQL('{SQL Server}','mssql-01.cq79i0ypklbj.us-east-2.rds.amazonaws.com','testEntity','mssql_01_admin','Th3Bomb!')
 	runSQL.open_conn()
 
 	for t in all_tables:
+		
 		if not(runSQL.check_if_object_exists(t)) : tstat.append(t)
 	
 	runSQL.close_conn()	
@@ -422,7 +415,7 @@ def bcp_all_data():
 	for t in global_vars.all_table_list():
 		do_bcp = 'bcp ' + t.table_name + ' in ' + t.table_name + '.csv -Smssql-01.cq79i0ypklbj.us-east-2.rds.amazonaws.com -Umssql_01_admin -PTh3Bomb! -dtestEntity -c -t"'+delim_char+'"'
 		os.system(do_bcp)
-		if t.table_type == 'domain' : 
+		if t.table_type == global_vars.keys['pdkey'] : 
 			t.process_status = 'loaded_to_database'
 	
 def define_domain_table(tbl):
@@ -496,33 +489,33 @@ def	define_table(tbl):
 # this is replaced with the table / column names and definition defined in a JSON object
 	
 	if tbl.table_name == 'people':
-		tbl.row_desc['peopleID']	 	= ['int',      0, global_vars.pkey]
+		tbl.row_desc['peopleID']	 	= ['int',      0, global_vars.keys['pkey']]
 		tbl.row_desc['full_name']	 	= ['full_name',1, None]
 		tbl.row_desc['date_of_birth']	= ['dob',      2, None]
 		
 	if tbl.table_name == 'address':
-		tbl.row_desc['addrTypeID']	 	= ['int',      0, global_vars.dkey]
-		tbl.row_desc['peopleID']	 	= ['int',      1, global_vars.fkey]
+		tbl.row_desc['addrTypeID']	 	= ['int',      0, global_vars.keys['pdkey']]
+		tbl.row_desc['peopleID']	 	= ['int',      1, global_vars.keys['fkey']]
 		tbl.row_desc['address']	 	    = ['address',  2, None]
 		
 	if tbl.table_name == 'email':
-		tbl.row_desc['eTypeID']	 	    = ['int',      0, global_vars.dkey]
-		tbl.row_desc['peopleID']	 	= ['int',      1, global_vars.fkey]
+		tbl.row_desc['eTypeID']	 	    = ['int',      0, global_vars.keys['pdkey']]
+		tbl.row_desc['peopleID']	 	= ['int',      1, global_vars.keys['fkey']]
 		tbl.row_desc['email']	 	    = ['email',  2, None]
 		
 	if tbl.table_name == 'phone':
-		tbl.row_desc['phTypeID']	 	= ['int',      0, global_vars.dkey]
-		tbl.row_desc['peopleID']	 	= ['int',      1, global_vars.fkey]
+		tbl.row_desc['phTypeID']	 	= ['int',      0, global_vars.keys['pdkey']]
+		tbl.row_desc['peopleID']	 	= ['int',      1, global_vars.keys['fkey']]
 		tbl.row_desc['phone_num']	 	= ['phone',  2, None]
 		
 	if tbl.table_name == 'people_by_type':
-		tbl.row_desc['pTypeID']	 	    = ['int',      0, global_vars.dkey]
-		tbl.row_desc['peopleID']	 	= ['int',      1, global_vars.fkey]	
+		tbl.row_desc['pTypeID']	 	    = ['int',      0, global_vars.keys['pdkey']]
+		tbl.row_desc['peopleID']	 	= ['int',      1, global_vars.keys['fkey']]	
 		
 			
 def clear_all_table_rows():
 	for t in global_vars.all_table_list():
-		if t.table_type != 'domain' : t.clear_all_rows()
+		if t.table_type != global_vars.keys['pdkey'] : t.clear_all_rows()
 		
 def write_tables_to_file():
 	for t in global_vars.all_table_list():
@@ -561,22 +554,26 @@ def populate_table(ptbl,tbl):
 		tname = ''
 	else:
 		tname = tbl.table_name
-
-	if ptbl.table_type == 'domain' and tbl == None : return
+    
+	pkey  = global_vars.keys['pkey']
+	pdkey = global_vars.keys['pdkey']
+	fkey  = global_vars.keys['fkey']
+	
+	if ptbl.table_type == global_vars.keys['pdkey'] and tbl == None : return
 	dkey = ''
 	
-	if ptbl.table_type == 'domain' and tbl != None : 
+	if ptbl.table_type == global_vars.keys['pdkey'] and tbl != None : 
 		dkey = str(md.random_from_list(ptbl.rows)[0])
 		
-	if ptbl.table_type != 'domain' and tbl == None : tbl = ptbl
+	if ptbl.table_type != global_vars.keys['pdkey'] and tbl == None : tbl = ptbl
 	delim_char = global_vars.delim_char
 	row = ''
 	str_gid = str(global_vars.global_id)
 	
 	for col in 	tbl.get_table_desc():
 		#print ('col :: {} '.format(col))
-		if col[2] == 'PK' or col[2] == 'FK' : row = row + str_gid + delim_char
-		if col[2] == 'DK' : row = row + dkey + delim_char
+		if col[2] == pkey or col[2] == fkey : row = row + str_gid + delim_char
+		if col[2] == pdkey : row = row + dkey + delim_char
 		if col[2] == None :
 			if col[1] == 'full_name' : row = row + md.random_full_name() 	 + delim_char  
 			if col[1] == 'dob'       : row = row + md.random_date(1945,1985) + delim_char  
@@ -587,6 +584,45 @@ def populate_table(ptbl,tbl):
 			#if col[1] == 'int'       : row = row + md.random_int(1000,10000) + delim_char  
 			
 	tbl.rows.append(row[:-1])			
+
+def get_table_type(tblCols):
+	ttyp = global_vars.keys['noK']
+	for c in tblCols:
+		#print('10 c {}\n'.format(c))   
+		if (c[2] != global_vars.keys['noK']) :
+			#print('20 c[2] {}\n'.format(c[2]))   
+			if (c[2] == global_vars.keys['pkey']): 
+				ttyp = global_vars.keys['pkey']
+			#print('30 ttyp {}\n'.format(ttyp))		
+			if (c[2] == global_vars.keys['pdkey']) and (ttyp != global_vars.keys['pkey']): 
+				ttyp = global_vars.keys['pdkey']
+			#print('40 ttyp {}\n'.format(ttyp))
+			if (c[2] == global_vars.keys['fkey'])  and (ttyp == global_vars.keys['noK']) : ttyp = global_vars.keys['fkey']
+			if (c[2] == global_vars.keys['fdkey']) and (ttyp == global_vars.keys['noK']) : ttyp = global_vars.keys['fdkey']
+			#print('50 ttyp {}\n'.format(ttyp))
+	return ttyp
+	
+def load_and_validate_parameters(jsonParms):
+	table_list = []
+	
+	tbls        = jsonParms['g_tableList']
+	data_tags   = jsonParms['g_domainTable']		# Nov 5,2018 : change the name g_domainTable to g_dataTags in the web pages and .js includes
+		
+	for t in tbls.keys():
+		rdesc = {}
+		colcnt = 0
+		ttyp = get_table_type(tbls[t])
+		
+		for c in tbls[t]:
+			rdesc[c[0]] = [c[1], colcnt, c[2]]
+			colcnt = colcnt + 1
+		
+		tblC = DatabaseTable(t,ttyp,data_tags)
+		tblC.row_desc = rdesc
+		table_list.append(tblC)	
+		
+	return table_list
+	
 	
 def print_and_split(msg):
 	print(msg)
@@ -595,7 +631,22 @@ def print_and_split(msg):
 	
 if __name__ == '__main__':
 	
-	global_vars = GlobalVars()
+	with open(sys.argv[1]) as f:
+		for l in f:
+			jsonParms = json.loads(l)
+	
+	
+	
+	
+	global_vars = GlobalVars(jsonParms)
+
+	tl = load_and_validate_parameters(jsonParms)
+	
+	#print_and_split('\ntype tl {}'.format(type(tl)))
+	#print('\na table name {}'.format(tl[0].table_name))
+	#print('\nall table type userA {}'.format(tl[0].table_type))
+		
+
 	md = MockData()
 	
 	# d_ are domain tables ( aka lookup, drop down ) -- they define the codes of the model
@@ -605,23 +656,28 @@ if __name__ == '__main__':
 	# later we will accpet a JSON object that defines the tables, columns and relationships. From this we will create the
 	# table definitions and domain table data. Then create the table_relations dictionary and run the populate functions 
 	#
+	
+	# 	1) open json machData.json
+	#	2) get table list
+	#	3) add to table_list{} 
+	#	4) create DatabaseTable object for the table --> ttype : map parent to PK 
+	#   5) get relation list from machData.json
+	
+	# loadAndValidate parameters
+	'''
 	tname = 'people'
-	ttype = 'parent'
+	ttype = global_vars.keys['pkey']
 	table_list = {}
 	table_list[tname] = DatabaseTable(tname,ttype)
 	define_table(table_list[tname])
 	print ('row desc {}'.format(table_list[tname].row_desc))
 	tname = 'address'
-	ttype = 'child'
+	ttype = global_vars.keys['fkey']
 	table_list[tname] = DatabaseTable(tname,ttype)
 	define_table(table_list[tname])
 	print ('row desc {}'.format(table_list[tname].row_desc))
+	print (global_vars.all_table_list())
 	print_and_split('cya')
-	
-	
-	
-	
-	
 	
 	d_person_type = DatabaseTable('d_person_type', 'domain')
 	d_email       = DatabaseTable('d_email', 'domain')
@@ -654,13 +710,16 @@ if __name__ == '__main__':
 	email      		   = DatabaseTable('email','child')
 	phone      		   = DatabaseTable('phone','child')
 	people_by_type     = DatabaseTable('people_by_type','child')
-	
+	'''
 
 
 	# later this assignment to global_vars will be from the JSON object that defines the table/column names and thier and relationships
 	# the first table in the list is the primary table in the relationship, the other tables are child relations
 	
-	global_vars.table_relations.append([people])
+	global_vars.table_relations.append([tl[0],tl[1]])
+	
+	'''
+	global_vars.table_relations.append([people])	
 	global_vars.table_relations.append([d_address,address])
 	global_vars.table_relations.append([d_email,email])
 	global_vars.table_relations.append([d_phone,phone])
@@ -673,7 +732,7 @@ if __name__ == '__main__':
 	define_table(email)
 	define_table(phone)
 	define_table(people_by_type)
-	
+	'''
 	# this will be run after the JSON is parsed and tables defined and in the case of domain tables populated with data
 	# essentially this is where the code will start ( again, after the JSON parse )
 	#
