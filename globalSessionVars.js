@@ -8,6 +8,9 @@ var g_parameters    = {}
 var g_domainTable   = {}	// declared only here in machData_designER.html. Others load from session
 var g_keyTable      = {}    // declared only here in machData_designER.html. Others load from session
 	
+g_tableList['new_table']    = []
+g_tableList['new_table'][0] = ['colName', 'dataTag', 'keyType']
+g_tableList['new_table'][1] = [' ', ' ', ' ']	
 	
 function getGlobalVars(jsonParms) {
 
@@ -72,7 +75,7 @@ function getGlobalVars(jsonParms) {
 } // getGlobalVars	
 
 function putGlobalVars() {
-
+alert('g_relationList' + g_relationList.rArr);
 	var g_machData_json = {};	// holds all json objects ... table diagrams, table relationships, machData.py parameters
 		
 	if (Object.keys(g_domainTable).length 	> 0) {g_machData_json.g_domainTable  = g_domainTable;}

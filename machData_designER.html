@@ -13,9 +13,10 @@
   function doDownloadFile(name) {
 
     putGlobalVars();
-    if (g_machData_json.g_tableList.new_table) { delete g_machData_json.g_tableList.new_table; }
+
+	delete g_machData_json.g_tableList.new_table;
 	var jsonStr = JSON.stringify(g_machData_json);  
-	
+
 	const a = document.createElement('a');
 	const type = name.split(".").pop();
 	a.href = URL.createObjectURL( new Blob([jsonStr], { type:`text/${type === "txt" ? "plain" : type}` }) );
@@ -202,7 +203,7 @@
    
 	var k = Object.keys(g_keyTable);
 	var v = Object.values(g_keyTable);
-  alert(k,v) 
+  //alert(k,v) 
 	var i = 0;
 	var shw = "<table border=1 id='tbl_keys'>";
    
@@ -270,7 +271,6 @@
   //						  keyType   (enter the src/trg mapping. row,cell pairs and if both are present move the data)
   //									 'keyType':{'src':[r,c], 'trg':[r,c]}
   //
-
   //alert(cmdArray[0] + ' '+ g_editControl.editOn)
   
   var dataTag_complete = false
@@ -334,8 +334,8 @@
 		var sc = g_editControl.srcTrgMap['dataTag']['src'][1];
 		var tr = g_editControl.srcTrgMap['dataTag']['trg'][0];
 		var tc = g_editControl.srcTrgMap['dataTag']['trg'][1];
-		
 		document.getElementById('tbl_desc').rows[tr].cells[tc].innerHTML = document.getElementById('tbl_domain').rows[sr].cells[sc].innerHTML;
+		
 		dataTag_complete = true	
 		} // process dataTag as source 
  	

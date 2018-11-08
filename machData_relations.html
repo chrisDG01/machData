@@ -9,7 +9,6 @@
 
 
 
-
   function doDownloadFile(name) {
   var jsonStr = JSON.stringify(doTableToJSON('tbl_desc'))
 	
@@ -43,20 +42,11 @@
   // ================================================================================================= //
   
   
-	/*
-  var g_tableList    = {}
-  var g_editControl  = {}
-  var g_relationList = {}	// for display and UX list {'parentTable':['childTable'...].  Some redundency will occur - remove these before exporting
-							// to machData.py. on output this structure is : {'parentTableName': [], 'domainTable':['childTable', ...]}
-  */
-  
   function doInitiateVars() {
 	var errMsg = ''
 	
 	getGlobalVars()
-	
-
-	
+		
   } // doInitiateVars
  
 	
@@ -125,9 +115,6 @@
 	var tbl = g_tableList[tname]
     var shw = ''
 	
-//alert(tbl.length)
-//alert(tbl[0])
-	
 	var pkCol  = doGetColNum(tname, 'PK')
 	if (pkCol == null ) { pkCol = doGetColNum(tname, 'PDK') }
 	
@@ -136,7 +123,6 @@
 	shw = "<div><table id='tbl_parent_" + tname + "' class='tbl_parentObj'>"
 	shw = shw + "<tr colspan=4 ><td onclick=doEdit('parentTable','" + tname + "')>" + tname + "</td></tr>"
 	shw = shw + "<tr colspan=2 class='parentObj'><td>" + tbl[pkCol][0] + "</td><td>" + tbl[pkCol][2] + "</td></tr>"
-	//shw = shw + "<tr class='parentObj'><td> >> </td><td>child tname</td><td>colname</td><td>keyType</td></tr>"
 	shw = shw + "</table></div>"
 	
 	return shw
@@ -272,7 +258,7 @@
 	
 	var ckColNum = doGetColNum(ctname,fKey)
 	
-    if (ckColNum == null) { alert('Primary key designation not found in parent table ... '); return }	
+    if (ckColNum == null) { alert('Foriegn key match not found in parent table ... '); return }	
 	
 //alert('ctname =[' + ctname + ']  pKey [' + pKey + ']  ckColNum ['+ckColNum+']')
 	
@@ -353,13 +339,13 @@
 
  } // doGetNextCell
   
+  
  function doPutParentTable() {
 	var nrows = 2
 	var ncols = 4
 	var r     = 0
 	var c     = 0
 	var shw   = ''
-	
 	
 	shw = "<table id='tbl_parentTables' class='parentTable'>"
 	
@@ -372,11 +358,59 @@
 		shw = shw + "</tr>"
 
 	} //for r
-//alert(shw)	
+
     document.write(shw)
  } //  doPutParentTable
   
+  
+function createRelationsList() {
+
+    var ids = document.querySelectorAll('[id]');
+	var idsArr = Array.from(ids);
+    var i;
+	var j;
+	var idxA = [];
+    var ptbl;
+	var clst = [];
+	var relationList = {};
+
+	for (i=0; i<idsArr.length; i++) { 
+		if ( idsArr[i].id.startsWith('tbl_parent_') ) { idxA.push(i) }
+	} // for i
+	
+	for (i=0; i<idxA.length; i++) { 
+		clst = []
+		ptbl = document.getElementById(idsArr[idxA[i]].id);
+        
+		var ptname = ptbl.rows[0].cells[0].innerHTML
+		
+//alert('parent name     : ' + ptbl.rows[0].cells[0].innerHTML)
+//alert('... num of rows : ' + ptbl.rows.length)
+
+		for (j = 2;  j <= ptbl.rows.length-1; j++ ) { 
+/*
+alert('child name :' + ptbl.rows[j].cells[1].innerHTML)
+alert('child col :'  + ptbl.rows[j].cells[2].innerHTML)
+alert('child key :'  + ptbl.rows[j].cells[3].innerHTML)
+*/
+			clst.push(ptbl.rows[j].cells[1].innerHTML)
+		} // if 
+		
+	    relationList[ptname] = clst;
+	} // for i
+
+
+//alert('relationList  :['  + relationList['customer']  + ']');
+
+	return relationList
+} //   createRelationsList
+  
+  
+  
+  
+  
 function doDesign() {
+	g_relationList = createRelationsList()
     putGlobalVars();
 	window.location.href = "machData_designER.html";
   
@@ -384,6 +418,7 @@ function doDesign() {
   
  
 function doParameters() {
+	g_relationList = createRelationsList()
     putGlobalVars();
 	window.location.href = "machData_parameters.html";
   
@@ -506,45 +541,12 @@ function doParameters() {
 
 </div>
 
-<!--
-<div id='div_domain' class='domain' >sss</div>
-
-
-<div id='div_tableTitle' class='tableTitle' >
-	<table>
-		<tr>
-		 <td>
-		   <input type='text' id='txt_tableTitle'  value='' >
-		 </td>
-		</tr>
-    </table> 
-</div> 
-
-<div id='div_table' class='table' >sss</div>
-
-<div id='div_edit' class='edit' >
-	<table>
-		<tr>
-		 <td>
-		   <input type='button' id='btn_doEdit' class='fullSpace' value='Edit Off' onclick="doEdit(['toggleEdit'])">
-		 </td>
-		 <td>
-		   <input type='button' id='btn_addRow' class='fullSpace' value='Add Row' onclick="doAddDescRow()">
-		 </td>
-		 <td>
-		   <input type='button' id='btn_addTable' class='fullSpace' value='Add Table' onclick="doAddTable()">
-		 </td>
-		</tr>
-    </table> 
-</div> 
--->
 <div id='test' class='test' >
 
-  <button id='btn_dnloadVar' class='list' onclick="doDesign()">goto design</button>
+  <button id='btn_design' class='list' onclick="doDesign()">goto design</button>
   
-  <button id='btn_dnloadVar' class='list' onclick="doParameters()">goto params</button>
-
-  
+  <button id='btn_parms' class='list' onclick="doParameters()">goto params</button>
+  <button id='btn_allIds' class='list' onclick="createRelationsList()">all ids</button>
   
   
   <p id="demo"></p>
