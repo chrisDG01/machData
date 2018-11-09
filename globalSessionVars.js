@@ -75,7 +75,6 @@ function getGlobalVars(jsonParms) {
 } // getGlobalVars	
 
 function putGlobalVars() {
-alert('g_relationList' + g_relationList.rArr);
 	var g_machData_json = {};	// holds all json objects ... table diagrams, table relationships, machData.py parameters
 		
 	if (Object.keys(g_domainTable).length 	> 0) {g_machData_json.g_domainTable  = g_domainTable;}

@@ -13,9 +13,27 @@
   function doDownloadFile(name) {
 
     putGlobalVars();
+	//
+	// nov 9,2018 cglenn
+	// prep for download - remove some directive data that is not needed in machData.py
+	//
+	var dnLoad_MD = g_machData_json;
+	var t;
+	
 
-	delete g_machData_json.g_tableList.new_table;
-	var jsonStr = JSON.stringify(g_machData_json);  
+	delete dnLoad_MD.g_tableList.new_table;
+	
+	
+	for (t in dnLoad_MD.g_tableList) {
+		if (dnLoad_MD.g_tableList[t][0][0] == 'colName' && dnLoad_MD.g_tableList[t][0][1] == 'dataTag' & dnLoad_MD.g_tableList[t][0][2] == 'keyType') {
+			dnLoad_MD.g_tableList[t].splice(0,1);
+		} // if
+	} // for
+
+    //
+	// end of prep for download
+	//
+	var jsonStr = JSON.stringify(dnLoad_MD);  
 
 	const a = document.createElement('a');
 	const type = name.split(".").pop();
@@ -504,8 +522,8 @@
 <br>
 
 <div id='div_control' class='control'></div>
-<div id='div_keys' class='key' >sss</div>
-<div id='div_domain' class='domain' >sss</div>
+<div id='div_keys' class='key' ></div>
+<div id='div_domain' class='domain' ></div>
 
 
 <div id='div_tableTitle' class='tableTitle' >
@@ -520,7 +538,7 @@
 
 
 
-<div id='div_table' class='table' >sss</div>
+<div id='div_table' class='table' ></div>
 
 <div id='div_edit' class='edit' >
 	<table>
@@ -542,7 +560,7 @@
   <table>
   <tr>
 	<td>
-		<button id='btn_dnloadVar' class='list' onclick="doDownloadFile('machData.json')">download</button>
+		<button id='btn_dnloadVar' class='list' onclick="doDownloadFile('machData.txt')">download</button>
 	</td>
 	<!-- 
 	<td>
@@ -552,8 +570,8 @@
 	<td>
 		<button id='btn_changeDisplay' class='list' onclick="doDebug()">DEBUG</button>
 	</td>
-		<td>
-		upload a file to a var <input type="file" id="fileinput" >cccc</input>
+	<td>
+		upload a file to a var : <input type="file" id="fileinput" >upload</input>
 	</td>
   </tr>
   <tr>
