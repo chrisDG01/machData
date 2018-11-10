@@ -31,6 +31,7 @@ class GlobalVars():
 	
 	def __init__(self,jsonParms):
 
+	
 		def create_table_objs(self, jparms):     # nov 8,2018 cglenn : improve this 
 			table_list = {}
 			tbls       = jparms['g_tableList']
@@ -60,6 +61,8 @@ class GlobalVars():
 				a = []
 			return f
 		
+
+		
 		self.use_max_DB_ID		    = True 	if (jsonParms['g_parameters']['use_max_DB_ID'] 		  == None)	else jsonParms['g_parameters']['use_max_DB_ID']
 		self.global_id_batch_size	= 1 	if (jsonParms['g_parameters']['global_id_batch_size'] == None)	else jsonParms['g_parameters']['global_id_batch_size']
 		self.global_id		     	= 1 	if (jsonParms['g_parameters']['global_id'] 			  == None) 	else jsonParms['g_parameters']['global_id']
@@ -72,6 +75,10 @@ class GlobalVars():
 		self.table_objs				= create_table_objs(self,jsonParms)
 		self.table_relations		= format_table_relations(self,jsonParms['g_relationList'])
 		
+		
+	
+
+	
 	def get_table_obj(self,tname):
 		return self.table_list[tname]
 	
@@ -194,8 +201,7 @@ class MockData:
 
 	def random_string(self, l):
 		return 'S' * l
-		
-		
+				
     def random_date(self, sy,ey):
         y = str(self.random_int(sy,ey))
 
@@ -634,12 +640,44 @@ def populate_table(ptbl,tbl):
 			if col[1] == 'phone'     : row = row + md.random_phone()         	  + delim_char  
 			if col[1] == 'int'       : row = row + str(md.random_int(1000,10000)) + delim_char  
 			if col[1] == 'vstr20'    : row = row + md.random_string(20)		 	  + delim_char 
-			if col[1] == 'vstr80'    : row = row + md.random_string(80)		 	  + delim_char 
+			if col[1] == 'vstr80'    : row = row + 'asasasas'			  + delim_char 
 			if col[1] == 'vstr128'   : row = row + md.random_string(128)	 	  + delim_char 
 			
 	tbl.rows.append(row[:-1])			
 
-	
+def get_parms_missing(jsonParms):
+		r=[]
+		try: 
+			b = jsonParms['g_parameters']
+		except :
+			r.append('g_parameters')
+			
+			
+		try: 
+			b = jsonParms['g_keyTable']
+		except :
+			r.append('g_keyTable')
+			
+			
+		try: 
+			b = jsonParms['g_tableList']
+		except :
+			r.append('g_tableList')
+			
+			
+		try: 
+			b = jsonParms['g_domainTable']
+		except:
+			r.append('g_domainTable')
+			
+			
+		try: 
+			b = jsonParms['g_relationList']
+		except :
+			r.append('g_relationList')
+
+		return r	
+
 	
 def print_and_split(msg):
 	print(msg)
@@ -652,10 +690,14 @@ if __name__ == '__main__':
 		for l in f:
 			jsonParms = json.loads(l)
 	
-	global_vars = GlobalVars(jsonParms)
-		
+	err = get_parms_missing(jsonParms)
+	if ( err ) :
+		print_and_split('\nError on processing json file -- quitting.\n...Missing these parameters ... [{}]'.format(err))
 	
-	print('keys {} '.format(global_vars.table_keys));
+	global_vars = GlobalVars(jsonParms)
+	
+	
+	#print('keys {} '.format(global_vars.table_keys));
 		
 
 	md = MockData()

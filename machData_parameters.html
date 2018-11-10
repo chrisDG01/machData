@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title> build parameters..</title>
-	<script  src="globalSessionVars.js"></script>
+	<title> build relation..</title>
+	 <script  src="globalSessionVars.js"></script>
 </head>	
-<script =javascript>
-
+<script>
 
 
 
@@ -43,399 +42,62 @@
   // ================================================================================================= //
   
   
-/*	var domainTable = {}
-	domainTable.int = 'integer'
-	domainTable.vstr20 = 'varchar(20)'
-	domainTable.vstr80 = 'varchar(80)'
-	domainTable.vstr128 = 'varchar(128)'
-	domainTable.dtetm = 'datetime'
-	domainTable.phone = 'varchar(20)'
-	domainTable.email = 'varchar(40)'
-	domainTable.address = 'varchar(128)'
-	domainTable.full_name = 'varchar(128)'
-	domainTable.dob = 'datetime'
-	
-	var keyTable = {}
-	keyTable.PK    = 'PK'
-	keyTable.FK    = 'FK'
-	keyTable.PDK   = 'PDK'
-	keyTable.FDK   = 'FDK'
-	keyTable.noK   = 'None'
-*/	
-	
-	
-  //var domainTable	 = {}
-  //var keyTable	     = {}
-  var g_tableList    = {}
-  var g_editControl  = {}
-  var g_relationList = {}	// for display and UX list {'parentTable':['childTable'...].  Some redundency will occur - remove these before exporting
-							// to machData.py. on output this structure is : {'parentTableName': [], 'domainTable':['childTable', ...]}
-  
   function doInitiateVars() {
-	var errMsg = ''
-	
+		
 	getGlobalVars()
-	
-
-	
+		
   } // doInitiateVars
  
-	
-  function doTableToJSON(tblID) {
-	var jsonTbl   = {}
-    var tbl       = document.getElementById(tblID);
-	var rowA      = []
-	var tableName = document.getElementById('txt_tableTitle').value;
-	
-	jsonTbl[tableName] = []
-	
-	var r = 0;
-	for ( c = 0; c < tbl.rows[r].cells.length; c++) {
-		  rowA[c] = tbl.rows[r].cells[c].innerHTML;
-		}
-	jsonTbl[tableName][r] = rowA;
-			
-	for (r = 1; r < tbl.rows.length; r++) {
-	    rowA = [];
-		for ( c = 0; c < tbl.rows[r].cells.length; c++) {
-				if (c == 0) 
-				   { 
-				      rowA[c] = document.getElementById('tbl_desc_colName_'+r).value
-				    }
-				else
-				   { 
-				      rowA[c] = tbl.rows[r].cells[c].innerHTML
-				   }
-				
-			   jsonTbl[tableName][r] = rowA;
-			}
-	} // for r 
-	
-	return jsonTbl
-
-	} // doTableToJSON
-	
- function doGetColNum(tname,keyType) {
-    var tbl      = g_tableList[tname]  
-    var c = 0
-	
-	while (c < tbl.length) {
-		
-		if (tbl[c][2] == keyType )
-			{ return c }
-		else
-			{ c = c + 1 }
-		
-	} // while
-
-    return null
-	
- } // doGetColNum
  
- function doGetKeyTypes(tname) {
-	var cols      = g_tableList[tname]
-	var colKTypes = {}
-	
-	for (i=0; i<cols.length; i++) { colKTypes[cols[i][2]] = ''; }
-	
-	return Object.keys(colKTypes)
- } // doGetKeyTypes
+ function updateParams() {
  
  
- function doCreateParentObj(tname) {
-	var tbl = g_tableList[tname]
-    var shw = ''
-	
-//alert(tbl.length)
-//alert(tbl[0])
-	
-	var pkCol  = doGetColNum(tname, 'PK')
-	if (pkCol == null ) { pkCol = doGetColNum(tname, 'PDK') }
-	
-	if ( pkCol == null ) { return null }
-	
-	shw = "<div><table id='tbl_parent_" + tname + "' class='tbl_parentObj'>"
-	shw = shw + "<tr colspan=4 ><td onclick=doEdit('parentTable','" + tname + "')>" + tname + "</td></tr>"
-	shw = shw + "<tr colspan=2 class='parentObj'><td>" + tbl[pkCol][0] + "</td><td>" + tbl[pkCol][2] + "</td></tr>"
-	//shw = shw + "<tr class='parentObj'><td> >> </td><td>child tname</td><td>colname</td><td>keyType</td></tr>"
-	shw = shw + "</table></div>"
-	
-	return shw
-	
- } // doCreateParentObj
+ 	g_parameters.use_max_DB_ID		  	= document.getElementById('txt_useMaxDbId').value 		
+
+	g_parameters.global_id_batch_size	= document.getElementById('txt_globalIdBatchSize').value
+	g_parameters.global_id            	= document.getElementById('txt_globalId').value  		
+	g_parameters.num_of_batches	 		= document.getElementById('txt_numOfBatches').value  	
+	g_parameters.curr_batch_number      = document.getElementById('txt_currBatchNumber').value  
+	g_parameters.delim_char           	= document.getElementById('txt_delimChar').value  		
+	g_parameters.truncate_and_load 		= document.getElementById('txt_truncateAndLoad').value  
+	g_parameters.write_to_DB 		 	= document.getElementById('txt_writeToDb').value  		
  
  
-  function doPopulateParentDisplay(tList) {
-	var rc = []
-	var tbl = document.getElementById('tbl_parentTables')
+ } // updateParams
+ 
+ function loadInputValues() {
 
-	for ( i = 0; i < tList.length; i++) {
-	
-      	rc = doGetNextCell();
-		tbl.rows[rc[0]].cells[rc[1]].innerHTML = doCreateParentObj(tList[i]);
-
-		} // for		
-
-  } // doPopulateParentDisplay
-   
+	document.getElementById('txt_useMaxDbId').value 		=	g_parameters.use_max_DB_ID		  	  
+	document.getElementById('txt_globalIdBatchSize').value 	=	g_parameters.global_id_batch_size	 
+	document.getElementById('txt_globalId').value  		 	=	g_parameters.global_id            	  
+	document.getElementById('txt_numOfBatches').value  	 	=	g_parameters.num_of_batches	 		 
+	document.getElementById('txt_currBatchNumber').value   	=	g_parameters.curr_batch_number       
+	document.getElementById('txt_delimChar').value  		=	g_parameters.delim_char           	  
+	document.getElementById('txt_truncateAndLoad').value   	=	g_parameters.truncate_and_load 		 
+	document.getElementById('txt_writeToDb').value  		=	g_parameters.write_to_DB 		 	 
   
- 
-  function doPopulateChildDisplay(tList) {
-
-	var shw = "<table border=1 id='tbl_childTables'>";
-
-	shw = shw + "<tr>"
-	for ( i = 0; i < tList.length; i++) {
-		shw = shw + "<td onclick=doEdit('childTable','" + tList[i] + "')>" + tList[i] + "</td>"
-	}
-	shw = shw + "</tr>"
-	shw = shw + '</table>'
-	
-	document.getElementById('div_childList').innerHTML = shw ;
-
-  } // doPopulateChildDisplay
-   
-  
- 
- function doPopulateAllDisplays() {
-	var tList = Object.keys(g_tableList)
-	var cList = []
-	var pList = []
-	var kt = []
-	var tn = ''
-	var i = 0;
-	
-	for (i=0; i<tList.length; i++) { 
-	  tn = tList[i];
-	  kt = doGetKeyTypes(tn);
-	  if ( kt.includes('PK') || kt.includes('PDK') ) 
-	     {  pList.push(tList[i]) } 
-	  else
-	     {	cList.push(tList[i])   } 
-	} // for
-
-	doPopulateChildDisplay(cList)
-	doPopulateParentDisplay(pList)
-	
- } // doPopulateAllDisplays
- 
-
- 
-  function doHighLiteTable(tblType, tname, cmd) {
-    var r   = 0;
-	var c   = 0;
-	var fnd = false
-	
-	var cellColor = (cmd == 'on') ? 'blue' : 'white'
-	
-	if (tblType == 'child') {
-		var tbl = document.getElementById('tbl_childTables');
-		
-		while ( r < tbl.rows.length && (!fnd)) { 
-			c = 0;
-			while ( c < tbl.rows[r].cells.length && (!fnd)) {
-				if (tbl.rows[r].cells[c].innerHTML == tname) 
-					{ fnd = true; } 
-				else 
-					{ c++; }
-			} // while c
-			if (!fnd) { r++; }
-		} // while r
-		
-		if (fnd) { tbl.rows[r].cells[c].style.background = cellColor; }
-	} // if child
-	
-	if (tblType == 'parent') {
-		var tbl = document.getElementById('tbl_parent_' + tname);
-		tbl.style.background = cellColor;
-	} // parent
-		  
-  } // doHighLiteTable
-  
-    
- 
- function doDeleteChild(ptname, ctname) {
- 
-	var ptbl = document.getElementById('tbl_parent_'+ptname);
-	var r = 2
-	
-	while ( r < ptbl.rows.length && ptbl.rows[r].cells[1].innerHTML != ctname ) { r++ }
-	
-	if (ptbl.rows[r].cells[1].innerHTML == ctname) 
-		{  ptbl.deleteRow(r); }
-	else 
-		{ alert ('error on delete child ... child table name not found'); }
- 
- } //doDeleteChild
- 
- 
- 
- function doAddChildToParent() {
-  
-	var ctname   = g_editControl.childTable;
-	var ptname   = g_editControl.parentTable;
-	var ptbl     = document.getElementById("tbl_parent_" + ptname);
-//alert('ptbl ['+ptbl.rows[0].cells[0].innerHTML+']')
-//alert('ptbl ['+ptbl.rows[1].cells[1].innerHTML+']')
- 
-	var pKey     = ptbl.rows[1].cells[1].innerHTML;
-	var ctbl     = g_tableList[ctname];
-	
-	var row      = ptbl.insertRow(-1);
-	var padCell  = row.insertCell(0);
-	var ctnCell  = row.insertCell(1);
-    var cColName = row.insertCell(2);
-	var cKeyType = row.insertCell(3);
-	
-	if (pKey == 'PK')  { var fKey = 'FK' }
-	if (pKey == 'PDK') { var fKey = 'FDK' }
-	
-	
-	var ckColNum = doGetColNum(ctname,fKey)
-	
-    if (ckColNum == null) { alert('Primary key designation not found in parent table ... '); return }	
-	
-//alert('ctname =[' + ctname + ']  pKey [' + pKey + ']  ckColNum ['+ckColNum+']')
-	
-	row.ondblclick = (function() {doDeleteChild(ptname,ctname)});
-    padCell.innerHTML  = 'o';
-	ctnCell.innerHTML  = ctname;
-//alert('ctbl ['+ctbl[ckColNum][2]+']')
-
-	cColName.innerHTML = ctbl[ckColNum][0];
-	cKeyType.innerHTML = ctbl[ckColNum][2];
-	
-  } // doAddChildToParent
-  
-   
-  
-    
-  function doEdit(cmd, tblName) { 
-//alert('doEdit ' + cmd + ' ' + tblName)
-  
-  
-  if (cmd == 'childTable') { 
-		if (g_editControl.childTable != '') {
-			doHighLiteTable('child',g_editControl.childTable, 'off')
-		}
-		g_editControl.childTable = tblName;
-		doHighLiteTable('child',tblName, 'on') 
-	} // if child
-
-  if (cmd == 'parentTable') { 
-		if (g_editControl.parentTable != '') {
-			doHighLiteTable('child',g_editControl.parentTable, 'off')
-		}
-  
-		g_editControl.parentTable = tblName;	
-		doHighLiteTable('parent',tblName, 'on') 
-	} // if parent
-
-  if (g_editControl.childTable != '' && g_editControl.parentTable != '' ) {
-		doAddChildToParent( g_editControl.parentTable, g_editControl.childTable )
-        doHighLiteTable('child',  g_editControl.childTable, 'off')
-		doHighLiteTable('parent', g_editControl.parentTable,'off')
-		g_editControl.childTable = ''
-		g_editControl.parentTable = ''	
-
-	} //if g_editControl.childTable != '' && g_editControl.parentTable != ''
-	
-  } // doEdit
-  
-  
- 
-  
- function doGetNextCell() {
-
-	var tbl = document.getElementById('tbl_parentTables');
-	var r = 0
-	var c = 0
-	var fnd = false
-	
-	while (!fnd) {
-
-	  while (r<tbl.rows.length && (!fnd)) {
-	  
-	    c = 0
-		while (c<tbl.rows[0].cells.length && (!fnd)) {
- 		
-            if  (tbl.rows[r].cells[c].innerHTML != '') 
-				{ c = c + 1 }
-			else	
-				{ fnd = true } 
-		
-		} // while c
-		r = r + 1
-	  } // while r
-      if (!fnd) { r=0; c=0; fnd=true } else {r = r - 1}
-    } // while !(fnd)
-	
-	return [r,c]
-
- } // doGetNextCell
-  
- function doPutParentTable() {
-	var nrows = 2
-	var ncols = 4
-	var r     = 0
-	var c     = 0
-	var shw   = ''
-	
-	
-	shw = "<table id='tbl_parentTables' class='parentTable'>"
-	
-	for (r=0; r<nrows; r++) {
-		shw = shw + "<tr>"
-
-		for (c=0; c<ncols; c++) {
-			shw = shw + "<td></td>"
-		} //for c
-		shw = shw + "</tr>"
-
-	} //for r
-//alert(shw)	
-    document.write(shw)
- } //  doPutParentTable
+  } // loadInputValues
   
 function doDesign() {
+	updateParams()
     putGlobalVars();
 	window.location.href = "machData_designER.html";
   
-  } // doDesign
-    
+  } // doRelations
+  
  
 function doRelations() {
+	updateParams()
     putGlobalVars();
 	window.location.href = "machData_relations.html";
   
-  } // doParameters  
-  
-  
-function testHttpRequest() {
-var xhr = new XMLHttpRequest();
-xhr.open("GET", "testOut.html", true);
-xhr.onreadystatechange = function() {
-  if (xhr.readyState == 4) {
-    // innerText does not let the attacker inject HTML elements.
-    document.getElementById("demo").innerText = xhr.responseText;
-  }
-}
-xhr.send();
-}
+  } // doRelations
   
   
  function doOnLoad() {
-   doInitiateVars();
-   //doDebug()
-   doPopulateAllDisplays()
-
-   //document.getElementById('fileinput').addEventListener('change', readSingleFile, false);
-   //doShowKeys();
-   //doShowDomain();
-   //doShowTableList();
-   //doShowTable(tableObj);
-
-
+   getGlobalVars()
+   loadInputValues()
+   
  }  // doOnLoad
    
 
@@ -452,136 +114,77 @@ xhr.send();
 </script>
 <style>
 
-   	div.childList {
+   	div.parameters {
    		width:  500px;
-		height: 150px;
+		height: 250px;
 		margin: auto;
 		border: 3px solid #73AD21;
 		position: absolute; left: 50px; top: 100px; 
 	}
-	div.parentList{
-   		width:  1000px;
-		height: 300px;
-		margin: auto;
-		border: 3px solid #73AD21;
-		position: absolute; left: 50px; top: 275px; 
-	}
-	
-	div.parentObj{
-   		width:  30px;
-		height: 30px;
-		margin: auto;
-		border: 1px solid #cccccc;		
-	}
-		
-	div.test {
-   		width:  1000px;
-		height: 100px;
+	div.menu {
+   		width:  500px;
+		height: 150px;
 		margin: auto;
 		border: 3px solid #73AD21;
 		position: absolute; left: 50px; top: 400px; 
 	}
-		
-	table.parentGrid {
+				
+	
+	table.parameters {
 		border: 1px solid black;
 		width: 100%;
 		padding: 1px;
 	}	
 	
-	table.parentTable {
-		border: 1px solid black;
-		width: 100%;
-		padding: 1px;
-	}	
-	table.parentObj {
-		border: 1px solid black;
-		width: 100%;
-		align-content: center;
-		padding: 1px;
-		
-	}	
-	tr.parentObj {
-		border: 1px solid black;
-		width: 100%;
-		align-content: center;
-		padding: 1px;
-		
-	}
 	button.list {
 		width:  100px;
 		height: 30px;
 		border: 3px solid #ccD000;
 	}
 	
-	button.fullSpace {
-		width:  100%;
-		height: 100%;
-		border: 1px solid #ccD000;
-	}
+	
 		
 </style>
 
-
-
 <body onload='doOnLoad()'>
 
-
-
-<h1>create mach data parameters (ver 2.0):</h1>
-
-
+<h1>create mach data relations (ver 2.0):</h1>
 <br>
 
-<div id='div_childList' class='childList'></div>
-
-<div id='div_parentList' class='parentList' >
-
-	<script lang='javascript'> doPutParentTable()</script>
-
+<div id='div_parameters' class='parameters'>
+<table id='tbl_parameters' class='parameters'>
+	<tr>
+		<td>use_max_DB_ID</td><td>			<input type='text' id='txt_useMaxDbId'  		value='false' ></td></td>
+	</tr>	                                                                                
+	<tr>                                                                                    
+		<td>global_id_batch_size</td><td>	<input type='text' id='txt_globalIdBatchSize'	value='10' ></td></td>
+	</tr>                                                                                   
+	<tr>	                                                                                
+		<td>global_id</td><td>				<input type='text' id='txt_globalId'  			value='1' ></td></td>
+	</tr>                                                                                   
+	<tr>                                                                                    
+		<td>num_of_batches</td><td>			<input type='text' id='txt_numOfBatches'  		value='1' ></td></td>
+	</tr>		                                                                            
+	<tr>	                                                                                
+		<td>curr_batch_number</td><td>		<input type='text' id='txt_currBatchNumber'  	value='0' ></td></td>
+	</tr>                                                                                   
+	<tr>	                                                                                
+		<td>delim_char</td><td>				<input type='text' id='txt_delimChar'  			value='|' ></td></td>
+	</tr>                                                                                   
+	<tr>	                                                                                
+		<td>truncate_and_load</td><td>		<input type='text' id='txt_truncateAndLoad'  	value='false' ></td></td>
+	</tr>                                                                                   
+	<tr>	                                                                                
+		<td>write_to_DB</td><td>			<input type='text' id='txt_writeToDb'  			value='false' ></td></td>
+	</tr>		
 </div>
 
-<!--
-<div id='div_domain' class='domain' >sss</div>
+<div id='div_menu' class='menu' >
 
-
-<div id='div_tableTitle' class='tableTitle' >
-	<table>
-		<tr>
-		 <td>
-		   <input type='text' id='txt_tableTitle'  value='' >
-		 </td>
-		</tr>
-    </table> 
-</div> 
-
-<div id='div_table' class='table' >sss</div>
-
-<div id='div_edit' class='edit' >
-	<table>
-		<tr>
-		 <td>
-		   <input type='button' id='btn_doEdit' class='fullSpace' value='Edit Off' onclick="doEdit(['toggleEdit'])">
-		 </td>
-		 <td>
-		   <input type='button' id='btn_addRow' class='fullSpace' value='Add Row' onclick="doAddDescRow()">
-		 </td>
-		 <td>
-		   <input type='button' id='btn_addTable' class='fullSpace' value='Add Table' onclick="doAddTable()">
-		 </td>
-		</tr>
-    </table> 
-</div> 
--->
-<div id='test' class='test' >
-
-  <button id='btn_dnloadVar' class='list' onclick="doDesign()">goto design</button>
-  <button id='btn_dnloadVar' class='list' onclick="doRelations()">goto relations</button>
-  
-  <p id="demo"></p>
+  <button id='btn_design' class='list' onclick="doDesign()">goto design</button>
+  <button id='btn_parms' class='list' onclick="doRelations()">goto relations</button>
 
 </div>  
-
-	
 
 </body>
 </html>

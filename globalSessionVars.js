@@ -9,11 +9,10 @@ var g_domainTable   = {}	// declared only here in machData_designER.html. Others
 var g_keyTable      = {}    // declared only here in machData_designER.html. Others load from session
 	
 g_tableList['new_table']    = []
-g_tableList['new_table'][0] = ['colName', 'dataTag', 'keyType']
-g_tableList['new_table'][1] = [' ', ' ', ' ']	
+g_tableList['new_table'][0] = [' ', ' ', ' ']	
 	
-function getGlobalVars(jsonParms) {
 
+function getGlobalVars(jsonParms) {
 		
 	if (sessionStorage.g_machData_json) { g_machData_json = JSON.parse(sessionStorage.g_machData_json);	}
 										
@@ -64,13 +63,12 @@ function getGlobalVars(jsonParms) {
 			g_parameters.truncate_and_load 		 = true
 			g_parameters.write_to_DB 		 	 = false
 			
+			
 		} // else g_parameters
 		
 		
 	if (g_machData_json.g_tableList) 		{g_tableList    = g_machData_json.g_tableList;}
 	if (g_machData_json.g_relationList) 	{g_relationList = g_machData_json.g_relationList;}
-
-	
 	
 } // getGlobalVars	
 
