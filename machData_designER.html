@@ -57,33 +57,20 @@
     if (f) {
       var r = new FileReader();
       r.onload = function(e) { 
-	      var contents = e.target.result;
-		  //document.getElementById('div_keys').innerHTML = contents;
-		
-		// load machData.json here 
-//alert('in read parm file contents [' + contents + ']')			
-  		  g_machData_json = JSON.parse(contents);
-		
-		/*
-		    alert( "Got the file" 
-              +"name: " + f.name + "n"
-              +"type: " + f.type + "n"
-              +"size: " + f.size + " bytes" + "n"
-              + "starts with: " + contents  //.substr(1, contents.indexOf("n"))); 
-		*/  
-			
-//alert('read parm file gjson [' + JSON.stringify(g_machData_json) + ']')	
-	distributeGlobalVars();
-	doShowKeys();
-    doShowDomain();
-    doShowControl();
+	    var contents = e.target.result;
+		g_machData_json = JSON.parse(contents);
+		/* Got the file: f.name,f.type,f.size */
+		sessionStorage.clear();
+		distributeGlobalVars();
+		doShowKeys();
+		doShowDomain();
+		doShowControl();
       }
       r.readAsText(f);
     } else { 
       alert("Failed to load file");
     }
-	
-	
+		
   } // readSingleFile
   
   
