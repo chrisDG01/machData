@@ -17,10 +17,12 @@
 	// nov 9,2018 cglenn
 	// prep for download - remove some directive data that is not needed in machData.py
 	//
+	/*
 	var dnLoad_MD = g_machData_json;
 	var t;
 	
 
+	
 	delete dnLoad_MD.g_tableList.new_table;
 	
 	
@@ -34,7 +36,10 @@
 	// end of prep for download
 	//
 	var jsonStr = JSON.stringify(dnLoad_MD);  
-
+	*/
+	
+	var jsonStr = JSON.stringify(g_machData_json);  
+	
 	const a = document.createElement('a');
 	const type = name.split(".").pop();
 	a.href = URL.createObjectURL( new Blob([jsonStr], { type:`text/${type === "txt" ? "plain" : type}` }) );
@@ -42,6 +47,8 @@
 	a.click();
 	//document.getElementById('div_keys').innerHTML = jsonMDTxt + '....' + jsonData;
   } // doDownloadFile
+  
+  
   
   function readSingleFile(evt) {
     //Retrieve the first (and only!) File from the FileList object
@@ -51,12 +58,11 @@
       var r = new FileReader();
       r.onload = function(e) { 
 	      var contents = e.target.result;
-		  document.getElementById('div_keys').innerHTML = contents;
+		  //document.getElementById('div_keys').innerHTML = contents;
 		
 		// load machData.json here 
-  		  g_machData_json = contents;
-		
-		
+//alert('in read parm file contents [' + contents + ']')			
+  		  g_machData_json = JSON.parse(contents);
 		
 		/*
 		    alert( "Got the file" 
@@ -65,11 +71,19 @@
               +"size: " + f.size + " bytes" + "n"
               + "starts with: " + contents  //.substr(1, contents.indexOf("n"))); 
 		*/  
+			
+//alert('read parm file gjson [' + JSON.stringify(g_machData_json) + ']')	
+	distributeGlobalVars();
+	doShowKeys();
+    doShowDomain();
+    doShowControl();
       }
       r.readAsText(f);
     } else { 
       alert("Failed to load file");
     }
+	
+	
   } // readSingleFile
   
   
@@ -79,15 +93,11 @@
 	
   
   function doInitiateVars() {
-    getGlobalVars()
-	  
+    
+	distributeGlobalVars()
 	g_editControl.editOn=false;
 	g_editControl.srcTrgMap={'dataTag':{'src':[-1,-1], 'trg':[-1,-1]},
-							'keyType':{'src':[-1,-1], 'trg':[-1,-1]}}
-							 
-	g_tableList['new_table'] = []
-    g_tableList['new_table'][0] = ['colName', 'dataTag', 'keyType']
-    g_tableList['new_table'][1] = [' ', ' ', ' ']
+							 'keyType':{'src':[-1,-1], 'trg':[-1,-1]}}
 	
   } // doInitiateVars
  
@@ -97,17 +107,22 @@
     var tbl       = document.getElementById(tblID);
 	var rowA      = []
 	var tableName = document.getElementById('txt_tableTitle').value;
+	var dispr;
 	
 	jsonTbl[tableName] = []
 	
+//alert('doTableToJSON tblID [' + tblID + ']')	
+	/*
 	var r = 0;
 	for ( c = 0; c < tbl.rows[r].cells.length; c++) {
 		  rowA[c] = tbl.rows[r].cells[c].innerHTML;
 		}
 	jsonTbl[tableName][r] = rowA;
-			
+	*/
+//alert('doTableToJSON tbl.rows[0] [' + tbl.rows[0].cells[0].innerHTML + ']')	
 	for (r = 1; r < tbl.rows.length; r++) {
 	    rowA = [];
+		dr = r - 1
 		for ( c = 0; c < tbl.rows[r].cells.length; c++) {
 				if (c == 0) 
 				   { 
@@ -117,63 +132,93 @@
 				   { 
 				      rowA[c] = tbl.rows[r].cells[c].innerHTML
 				   }
-				
-			   jsonTbl[tableName][r] = rowA;
+					
+
+//alert('90 doTableToJSON jsonTbl [' + Object.keys(jsonTbl) + ']  vals [' + Object.values(jsonTbl) + ']')				   
 			}
+			
+//alert('doTableToJSON jsonTbl length [' + jsonTbl[tableName].length + ']')	
+
+	   jsonTbl[tableName][dr] = rowA;
+//alert('doTableToJSON r[' + r + ']  row[' + jsonTbl[tableName][dr] + ']')	   
 	} // for r 
-	
+//alert('99 doTableToJSON jsonTbl [' + Object.keys(jsonTbl) + ']  vals [' + jsonTbl[tableName][0] + ']')		
 	return jsonTbl
 
 	} // doTableToJSON
 	
 	
  function doShowTable(tblName) {
- var tblTitle = tblName;
- var tbl      = g_tableList[tblName]
- var nrows    = tbl.length
- var ncols    = tbl[0].length
+ 
+
  var tblDesc  = "<table id='tbl_desc' border=1 class='tbl_desc'>";
+
  
- document.getElementById('txt_tableTitle').value = tblTitle;
+ tblDesc = tblDesc + "<tr><th>ColName</th><th>DataTag</th><th>Key</th></tr>"
  
-	tblDesc = tblDesc + "<tr>"
-	var r = 0;
-	for ( c = 0; c < ncols; c++) {
-			tblDesc = tblDesc + '<th>' + tbl[r][c] + '</th>'
-		}
-	tblDesc = tblDesc + '</tr>'
+ 
+ if (tblName == 'New-Table-Name') {
+//alert('10 tblName [' + tblName + ']'); 
+     document.getElementById('txt_tableTitle').value = tblName;
+//alert('20 '); 	 
+     tblDesc = tblDesc + "<tr onclick=doEdit(['trg',1])>"
+	 tblDesc = tblDesc + "<td><input type='text' id='tbl_desc_colName_1' value=''></td>"  
+	 tblDesc = tblDesc + '<td> </td>' 
+	 tblDesc = tblDesc + '<td> </td>' 
+	 tblDesc = tblDesc + '</tr>' 
+	 tblDesc = tblDesc + '</table>' 
+//alert('30 '); 	 
+	 }
+ else
+	{
 	
-	for (r = 1; r < nrows; r++) {
-		tblDesc = tblDesc + "<tr onclick=doEdit(['trg',"+r+"])>"
+	var tbl      = g_tableList[tblName]
+	var tblTitle = tblName;
+	var nrows    = tbl.length
+    var ncols    = tbl[0].length
+	var dispr;
+	 
+    document.getElementById('txt_tableTitle').value = tblTitle;
+ 
+	
+	for (r = 0; r < nrows; r++) {
+	    dispr = r + 1
+		tblDesc = tblDesc + "<tr onclick=doEdit(['trg',"+dispr+"])>"
 		for ( c = 0; c < ncols; c++) {
 				if (c == 0) 
-				   { tblDesc = tblDesc + "<td><input type='text' id='tbl_desc_colName_"+r+"' value=" + tbl[r][c] + "></td>"  }
+				   { tblDesc = tblDesc + "<td><input type='text' id='tbl_desc_colName_"+dispr+"' value=" + tbl[r][c] + "></td>"  }
 				 else
 				   { tblDesc = tblDesc + '<td>' + tbl[r][c] + '</td>' }
 			}
 		tblDesc = tblDesc + '</tr>'	
     } // for r 
 	tblDesc = tblDesc + '</table>'
-
+    }
+	
+//alert('50 tblName [' + tblDesc + ']'); 
     document.getElementById('div_table').innerHTML = tblDesc;
-
+//alert('99 tblName '); 
 } // doShowTable 	
 
 
   function doAddTable() {
     var tableName = document.getElementById('txt_tableTitle').value;
 	
-	if (tableName == 'new_table') {
+//alert('doAddTable ...tableName [' + tableName + ']')
+	
+	if (tableName == 'New-Table-Name') {
 		alert('Please name the new table...');
 		return
 	}
 	
 	var jsTbl = doTableToJSON('tbl_desc');
 	
+//alert('doAddTbale jsTbl keys [' + Object.keys(jsTbl) + ']  values [' + Object.values(jsTbl) + ']')
+
    Object.assign(g_tableList,jsTbl);
+   
    doShowControl();
 
-  
   } // doAddTable
 
 
@@ -202,10 +247,14 @@
   } // doAddDescRow
   
   
+  
+  // 
+  // nov 11, 2018 cglenn : combine doShowDomain & doShowKeys into one function with parameters
+  //
   function doShowDomain() {
   	var k = Object.keys(g_domainTable);
 	var v = Object.values(g_domainTable);
-   
+  
 	var i = 0;
 	var shw = "<table border=1 id='tbl_domain'>";
    
@@ -218,7 +267,7 @@
 
 
   function doShowKeys() {
-   
+    
 	var k = Object.keys(g_keyTable);
 	var v = Object.values(g_keyTable);
   //alert(k,v) 
@@ -240,7 +289,10 @@
 	var i = 0;
 	var tblNames = Object.keys(g_tableList);
 	var shw = "<table border=1 id='tbl_control'>";
-	shw = shw + "<tr>"
+	shw = shw + "<tr><td onclick=doShowTable('New-Table-Name')>Add A Table</td>"
+
+//alert('tblNames [' + tblNames + ']')
+		
 	for ( i = 0; i < tblNames.length; i++) {
 		shw = shw + "<td onclick=doShowTable('" + tblNames[i] + "')>" + tblNames[i] + "</td>"
 	}
@@ -397,8 +449,8 @@
  
  function doDebug() {
  
-  alert(JSON.stringify(g_tableList));
-  alert(Object.keys(g_tableList));
+  alert(Object.keys(g_machData_json));
+  alert(JSON.stringify(g_machData_json));
   
  } // doDebug
 
@@ -410,7 +462,7 @@
    doShowKeys();
    doShowDomain();
    doShowControl();
-  // doShowTable(tableObj);
+
 
  }  // doOnLoad
   

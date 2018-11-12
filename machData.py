@@ -63,14 +63,14 @@ class GlobalVars():
 		
 
 		
-		self.use_max_DB_ID		    = True 	if (jsonParms['g_parameters']['use_max_DB_ID'] 		  == None)	else jsonParms['g_parameters']['use_max_DB_ID']
-		self.global_id_batch_size	= 1 	if (jsonParms['g_parameters']['global_id_batch_size'] == None)	else jsonParms['g_parameters']['global_id_batch_size']
-		self.global_id		     	= 1 	if (jsonParms['g_parameters']['global_id'] 			  == None) 	else jsonParms['g_parameters']['global_id']
-		self.num_of_batches		    = 1 	if (jsonParms['g_parameters']['num_of_batches']  	  == None)	else jsonParms['g_parameters']['num_of_batches']
-		self.curr_batch_number		= 0 	if (jsonParms['g_parameters']['curr_batch_number'] 	  == None)	else jsonParms['g_parameters']['curr_batch_number']
+		self.use_max_DB_ID		    = True  if (jsonParms['g_parameters']['use_max_DB_ID']        == u'True')	else False
+		self.global_id_batch_size	= 1 	if (jsonParms['g_parameters']['global_id_batch_size'] == None)	else int(jsonParms['g_parameters']['global_id_batch_size'])
+		self.global_id		     	= 1 	if (jsonParms['g_parameters']['global_id'] 			  == None) 	else int(jsonParms['g_parameters']['global_id'])
+		self.num_of_batches		    = 1 	if (jsonParms['g_parameters']['num_of_batches']  	  == None)	else int(jsonParms['g_parameters']['num_of_batches'])
+		self.curr_batch_number		= 0 	if (jsonParms['g_parameters']['curr_batch_number'] 	  == None)	else int(jsonParms['g_parameters']['curr_batch_number'])
 		self.delim_char		     	= '|' 	if (jsonParms['g_parameters']['delim_char']  		  == None)	else jsonParms['g_parameters']['delim_char']
-		self.truncate_and_load		= True 	if (jsonParms['g_parameters']['truncate_and_load']    == None)	else jsonParms['g_parameters']['truncate_and_load']
-		self.write_to_DB 			= False	if (jsonParms['g_parameters']['write_to_DB']    	  == None)	else jsonParms['g_parameters']['write_to_DB']
+		self.truncate_and_load		= True  if (jsonParms['g_parameters']['truncate_and_load']    == u'True')	else False
+		self.write_to_DB 			= True	if (jsonParms['g_parameters']['write_to_DB']    	  == u'True')	else False
 		self.table_keys				= jsonParms['g_keyTable']
 		self.table_objs				= create_table_objs(self,jsonParms)
 		self.table_relations		= format_table_relations(self,jsonParms['g_relationList'])

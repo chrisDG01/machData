@@ -43,9 +43,9 @@
   
   
   function doInitiateVars() {
-		
-	getGlobalVars()
-		
+
+	distributeGlobalVars()
+	
   } // doInitiateVars
  
  
@@ -95,7 +95,8 @@ function doRelations() {
   
   
  function doOnLoad() {
-   getGlobalVars()
+  
+   distributeGlobalVars()
    loadInputValues()
    
  }  // doOnLoad

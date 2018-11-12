@@ -43,9 +43,10 @@
   
   
   function doInitiateVars() {
-	var errMsg = ''
-	
-	getGlobalVars()
+
+	distributeGlobalVars()
+	g_editControl.childTable == '' 
+	g_editControl.parentTable == ''
 		
   } // doInitiateVars
  
@@ -104,8 +105,9 @@
  function doGetKeyTypes(tname) {
 	var cols      = g_tableList[tname]
 	var colKTypes = {}
+//alert('in doGetKeyType ... tname [' + tname + '] cols [' + cols + ']')
 	
-	for (i=0; i<cols.length; i++) { colKTypes[cols[i][2]] = ''; }
+	for (i=0; i<cols.length; i++) { colKTypes[cols[i][2]] = '' }
 	
 	return Object.keys(colKTypes)
  } // doGetKeyTypes
@@ -160,27 +162,87 @@
 
   } // doPopulateChildDisplay
    
-  
+ 
+
+  function doAddChildTables() {
+    
+	// find tbl_parent_" + tname + " and add a row for each asociated table in g_relations
+
+
+//alert('in add child tables to display ... keys g_relationList [' + Object.keys(g_relationList) + ']')	
+	
+	for (var ptname in g_relationList) {
+
+//alert('... in add child tables to display ... child list for [' + ptname +'] = [' +g_relationList[ptname] + ']')	
+		
+		for (var i =0; i< g_relationList[ptname].length; i++) {
+		    
+//alert('in add child tables to display ... ptname [' + ptname + ']  ctname [' + g_relationList[ptname][i] + ']')		
+            var id     = 'tbl_parent_' + ptname
+			var ctname = g_relationList[ptname][i]
+			var ptbl   = document.getElementById(id);
+			var pKey   = ptbl.rows[1].cells[1].innerHTML;
+			
+			if (pKey == 'PK')  { var fKey = 'FK' }
+			if (pKey == 'PDK') { var fKey = 'FDK' }
+			
+		    var row  = ptbl.insertRow(-1);
+			row.ondblclick = (function() {doDeleteChild(ptname,ctname)});
+			var padCell  = row.insertCell(0);
+			var ctnCell  = row.insertCell(1);
+			var cColName = row.insertCell(2);
+			var cKeyType = row.insertCell(3);
+	
+	
+	
+			padCell.innerHTML = "o";
+			ctnCell.innerHTML = ctname
+			cColName.innerHTML = 'colName'
+			cKeyType.innerHTML = 'key'
+	//ctKey.innerHTML  = fKey;
+			
+			
+			
+		} // ctname
+	
+	} // for ptname
+ 	
+} // 	doAddChildTables
+
+ 
  
  function doPopulateAllDisplays() {
-	var tList = Object.keys(g_tableList)
+ 
+    var tList = Object.keys(g_tableList)
 	var cList = []
 	var pList = []
 	var kt = []
 	var tn = ''
-	var i = 0;
+		
+//alert('in doPopAllDisplays tList [' + tList + ']');    
+
 	
-	for (i=0; i<tList.length; i++) { 
+	for (var i=0; i<tList.length; i++) { 
 	  tn = tList[i];
+//alert('doPopAll Displays for loop : tn [' + tn + '] tList.length [' + tList.length + ']')	  
 	  kt = doGetKeyTypes(tn);
+//alert('doPopAll Displays for loop : tn [' + tn + '] kt [' + kt + ']')
 	  if ( kt.includes('PK') || kt.includes('PDK') ) 
 	     {  pList.push(tList[i]) } 
 	  else
 	     {	cList.push(tList[i])   } 
 	} // for
 
+//alert('calling popChildDisplay with [' + cList + ']')
+
 	doPopulateChildDisplay(cList)
+//alert('calling popParentDisplay with [' + pList + ']')
+
 	doPopulateParentDisplay(pList)
+	
+	doAddChildTables()
+	
+
 	
  } // doPopulateAllDisplays
  
@@ -364,7 +426,6 @@
   
   
 function createRelationsList() {
-
     var ids = document.querySelectorAll('[id]');
 	var idsArr = Array.from(ids);
     var i;
@@ -386,13 +447,18 @@ function createRelationsList() {
 		
 //alert('parent name     : ' + ptbl.rows[0].cells[0].innerHTML)
 //alert('... num of rows : ' + ptbl.rows.length)
+//alert('.. r[1] cells[0]: ' + ptbl.rows[1].cells[0].innerHTML)
+
+
+
+
 
 		for (j = 2;  j <= ptbl.rows.length-1; j++ ) { 
-/*
-alert('child name :' + ptbl.rows[j].cells[1].innerHTML)
-alert('child col :'  + ptbl.rows[j].cells[2].innerHTML)
-alert('child key :'  + ptbl.rows[j].cells[3].innerHTML)
-*/
+
+//alert('child name :' + ptbl.rows[j].cells[1].innerHTML)
+//alert('child col :'  + ptbl.rows[j].cells[2].innerHTML)
+//alert('child key :'  + ptbl.rows[j].cells[3].innerHTML)
+
 			clst.push(ptbl.rows[j].cells[1].innerHTML)
 		} // if 
 		
@@ -400,7 +466,7 @@ alert('child key :'  + ptbl.rows[j].cells[3].innerHTML)
 	} // for i
 
 
-//alert('relationList  :['  + relationList['customer']  + ']');
+//alert('leaving relationList  :keys['  + Object.keys(relationList)  + ']  values[' + Object.values(relationList) + ']');
 
 	return relationList
 } //   createRelationsList
@@ -411,6 +477,7 @@ alert('child key :'  + ptbl.rows[j].cells[3].innerHTML)
   
 function doDesign() {
 	g_relationList = createRelationsList()
+//alert('going to design g_relationList  :keys['  + Object.keys(g_relationList)  + ']  values[' + Object.values(g_relationList) + ']');	
     putGlobalVars();
 	window.location.href = "machData_designER.html";
   
@@ -419,6 +486,7 @@ function doDesign() {
  
 function doParameters() {
 	g_relationList = createRelationsList()
+//alert('going to parms g_relationList  :keys['  + Object.keys(g_relationList)  + ']  values[' + Object.values(g_relationList) + ']');	
     putGlobalVars();
 	window.location.href = "machData_parameters.html";
   

@@ -4,19 +4,22 @@ var g_tableList     = {}
 var g_editControl   = {}
 var g_relationList  = {}	
 var g_parameters    = {}	
-	
-var g_domainTable   = {}	// declared only here in machData_designER.html. Others load from session
-var g_keyTable      = {}    // declared only here in machData_designER.html. Others load from session
-	
-g_tableList['new_table']    = []
-g_tableList['new_table'][0] = [' ', ' ', ' ']	
-	
+var g_domainTable   = {}	
+var g_keyTable      = {}    
 
-function getGlobalVars(jsonParms) {
-		
-	if (sessionStorage.g_machData_json) { g_machData_json = JSON.parse(sessionStorage.g_machData_json);	}
-										
-	if (g_machData_json.g_domainTable)
+	
+					
+
+
+
+function distributeGlobalVars() {	
+								
+	if  (('g_machData_json' in sessionStorage) == true )
+		{ 
+			g_machData_json = JSON.parse(sessionStorage.g_machData_json);	
+		}							
+								
+	if (('g_domainTable' in g_machData_json) == true )  
 		{
 			g_domainTable = g_machData_json.g_domainTable
 		}
@@ -35,7 +38,7 @@ function getGlobalVars(jsonParms) {
 			
 		} // else g_domain
 	
-	if (g_machData_json.g_keyTable)
+	if (('g_keyTable' in g_machData_json) == true )  
 		{
 			g_keyTable = g_machData_json.g_keyTable
 		}
@@ -48,7 +51,7 @@ function getGlobalVars(jsonParms) {
 			g_keyTable.noK   = 'None'
 		} // else g_keyTable
 	
-	if (g_machData_json.g_parameters)
+	if (('g_parameters' in g_machData_json) == true )  
 		{
 			g_parameters = g_machData_json.g_parameters
 		}
@@ -65,12 +68,25 @@ function getGlobalVars(jsonParms) {
 			
 			
 		} // else g_parameters
-		
-		
-	if (g_machData_json.g_tableList) 		{g_tableList    = g_machData_json.g_tableList;}
-	if (g_machData_json.g_relationList) 	{g_relationList = g_machData_json.g_relationList;}
 	
-} // getGlobalVars	
+	
+	if (('g_tableList' in g_machData_json) == true ) {g_tableList    = g_machData_json.g_tableList;}
+	
+	/*
+	if (('new_table' in g_tableList) == false )
+		{		
+			g_tableList['new_table']    = []
+			g_tableList['new_table'][0] = [' ', ' ', ' ']	
+		}
+	*/
+	
+	if (('g_relationList' in g_machData_json) == true ) {g_relationList = g_machData_json.g_relationList;}
+
+	
+
+} // distributeGlobalVars	
+
+
 
 function putGlobalVars() {
 	var g_machData_json = {};	// holds all json objects ... table diagrams, table relationships, machData.py parameters
@@ -80,6 +96,9 @@ function putGlobalVars() {
 	if (Object.keys(g_tableList).length 	> 0) {g_machData_json.g_tableList 	 = g_tableList;}
 	if (Object.keys(g_relationList).length 	> 0) {g_machData_json.g_relationList = g_relationList;}
 	if (Object.keys(g_parameters).length 	> 0) {g_machData_json.g_parameters 	 = g_parameters;}
+
+//alert('in putGlobalVars g_relationList  :keys['  + Object.keys(g_machData_json.g_relationList)  + ']  values[' + Object.values(g_machData_json.g_relationList) + ']');	
+
 	
 	sessionStorage.g_machData_json =  JSON.stringify(g_machData_json); 
 
