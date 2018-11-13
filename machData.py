@@ -72,10 +72,7 @@ class GlobalVars():
 		self.table_keys				= jsonParms['g_keyTable']
 		self.table_objs				= create_table_objs(self,jsonParms)
 		self.table_relations		= format_table_relations(self,jsonParms['g_relationList'])
-
 	
-	def get_table_obj(self,tname):
-		return self.table_list[tname]
 	
 	def incr_global_id(self):
 		self.global_id = self.global_id + 1
@@ -106,7 +103,7 @@ class DatabaseTable():
 		self.data_types = data_tags
 		self.row_desc = {}
 		self.rows     = []
-		self.curr_row = None
+		self.row_in_process = False
 		
 	def clear_all_rows(self):
 		self.rows = []
@@ -207,7 +204,7 @@ class MockData:
         return random.randint(s,e)
 
 	def random_string(self, l):
-		return 'S' * l
+		return str('S' * l)
 				
     def random_date(self, sy,ey):
         y = str(self.random_int(sy,ey))
@@ -330,11 +327,12 @@ def get_last_id():
 	runSQL.close_conn()
 	return int(last_ID[0][0])
 
-'''	
-def set_next_id():
-    global global_id
-    global_id = global_id + 1
-'''
+	
+
+def clear_all_process_status() :
+	for tbl in global_vars.table_relations.keys():
+		tbl.row_in_process = False
+	
 
 def table_ddl(ddl_type,tbl):
 	table_name = tbl.table_name
@@ -588,6 +586,7 @@ def populate_and_create_relationships():
 	max_loop = global_vars.global_id + global_vars.global_id_batch_size
 	while global_vars.global_id < max_loop:
 		
+		#clear_all_process_status()
 		for relation_list in global_vars.table_relations:
 			 
 			ptbl = global_vars.table_objs[relation_list[0]]
@@ -603,10 +602,7 @@ def populate_and_create_relationships():
 		
 		
 def populate_table(ptbl,tbl):
-	if tbl == None : 
-		tname = ''
-	else:
-		tname = tbl.table_name
+	
     
 	pkey  = global_vars.table_keys['pkey']
 	pdkey = global_vars.table_keys['pdkey']
@@ -616,7 +612,7 @@ def populate_table(ptbl,tbl):
 	
 	if ptbl.table_type == global_vars.table_keys['pdkey'] and tbl == None : 
 		return
-	
+		
 	dkey = ''
 	if ptbl.table_type == global_vars.table_keys['pdkey'] and tbl != None : 
 		dkey = str(md.random_from_list(ptbl.rows)[0])							# we assume the primary key is the first column in the row
@@ -636,17 +632,15 @@ def populate_table(ptbl,tbl):
 	# then link them ( tbl.fkey gets the str_gid
 	
 	delim_char = global_vars.delim_char
-	row = ''
 	str_gid = str(global_vars.global_id)
 	
+	row = ''
+	
 	for col in 	tbl.get_table_desc():
-		if col[2] == pkey: 
+		if col[2] in [ pkey,fkey ]:
 			row = row + str_gid + delim_char  
 			
-		if (col[2] == fkey) and (col[0] in pkColNames):
-			row = row + str_gid + delim_char  
-		
-		if (col[2] == fdkey) and (col[0] in pdkColNames):
+		if ((col[2] == fdkey) and (col[0] in pdkColNames)):
 			row = row + dkey + delim_char  
 			
 		#if col[2] == pdkey : row = row + dkey + delim_char
@@ -660,12 +654,12 @@ def populate_table(ptbl,tbl):
 			if col[1] == 'email'     : row = row + str_gid + '@email.com' 	 	  + delim_char
 			if col[1] == 'phone'     : row = row + md.random_phone()         	  + delim_char  
 			if col[1] == 'int'       : row = row + str(md.random_int(1000,10000)) + delim_char  
-			if col[1] == 'vstr20'    : row = row + md.random_string(20)		 	  + delim_char 
-			if col[1] == 'vstr80'    : row = row + md.random_string(80)			  + delim_char 
-			if col[1] == 'vstr128'   : row = row + md.random_string(128)	 	  + delim_char 
+			if col[1] == 'vstr20'    : row = row + str('S' * 20)		 	      + delim_char 
+			if col[1] == 'vstr80'    : row = row + str('S' * 80)		 	      + delim_char 
+			if col[1] == 'vstr128'   : row = row + str('S' * 128)		 	      + delim_char 
 			
 	tbl.rows.append(row[:-1])			
-
+	tbl.row_in_process = True
 	
 def get_parms_missing(jsonParms):
 		r=[]

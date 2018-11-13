@@ -105,7 +105,6 @@
  function doGetKeyTypes(tname) {
 	var cols      = g_tableList[tname]
 	var colKTypes = {}
-//alert('in doGetKeyType ... tname [' + tname + '] cols [' + cols + ']')
 	
 	for (i=0; i<cols.length; i++) { colKTypes[cols[i][2]] = '' }
 	
@@ -218,8 +217,6 @@
 	var pList = []
 	var kt = []
 	var tn = ''
-		
-//alert('in doPopAllDisplays tList [' + tList + ']');    
 
 	
 	for (var i=0; i<tList.length; i++) { 
@@ -227,10 +224,13 @@
 //alert('doPopAll Displays for loop : tn [' + tn + '] tList.length [' + tList.length + ']')	  
 	  kt = doGetKeyTypes(tn);
 //alert('doPopAll Displays for loop : tn [' + tn + '] kt [' + kt + ']')
+
 	  if ( kt.includes('PK') || kt.includes('PDK') ) 
 	     {  pList.push(tList[i]) } 
-	  else
+		 
+	  if ( kt.includes('FK') || kt.includes('FDK') ) 
 	     {	cList.push(tList[i])   } 
+
 	} // for
 
 //alert('calling popChildDisplay with [' + cList + ']')
