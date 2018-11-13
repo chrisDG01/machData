@@ -61,8 +61,6 @@ class GlobalVars():
 				a = []
 			return f
 		
-
-		
 		self.use_max_DB_ID		    = True  if (jsonParms['g_parameters']['use_max_DB_ID']        == u'True')	else False
 		self.global_id_batch_size	= 1 	if (jsonParms['g_parameters']['global_id_batch_size'] == None)	else int(jsonParms['g_parameters']['global_id_batch_size'])
 		self.global_id		     	= 1 	if (jsonParms['g_parameters']['global_id'] 			  == None) 	else int(jsonParms['g_parameters']['global_id'])
@@ -74,9 +72,6 @@ class GlobalVars():
 		self.table_keys				= jsonParms['g_keyTable']
 		self.table_objs				= create_table_objs(self,jsonParms)
 		self.table_relations		= format_table_relations(self,jsonParms['g_relationList'])
-		
-		
-	
 
 	
 	def get_table_obj(self,tname):
@@ -101,6 +96,7 @@ class GlobalVars():
 		
 		#print('self.table_relations		: {}\n'.format(self.table_relations ))	 
 		print('==================================================================\n')
+		
 		
 class DatabaseTable():
 	def __init__(self,table_name,table_type,data_tags):
@@ -153,7 +149,18 @@ class DatabaseTable():
 				return {'name':idx_name, 'col':col_name}
 		return {}
 
-
+	def get_column_names_by_keytype(self, keyType):
+		cn = []		
+		for col_name in self.row_desc.keys():
+			if self.row_desc[col_name][2] == keyType :
+				cn.append(col_name)
+		return cn
+		
+		
+		
+		
+		
+		
 class MockData:
 
     def __init__(self):
@@ -581,23 +588,16 @@ def populate_and_create_relationships():
 	max_loop = global_vars.global_id + global_vars.global_id_batch_size
 	while global_vars.global_id < max_loop:
 		
-		#print ('global_vars.table_relations [0] {}'.format(global_vars.table_relations[0]))
-		
-		
 		for relation_list in global_vars.table_relations:
-			#print ('relation_list {}'.format(relation_list))	
+			 
 			ptbl = global_vars.table_objs[relation_list[0]]
-			#print ('....ptbl {}'.format(ptbl.table_name))				
-			
+
 			populate_table(ptbl,None)
 				
 			for tn in relation_list[1:]:
-				#print ('....ptbl {} tbl {}'.format(ptbl.table_name, tbl.table_name))
-				
 				populate_table(ptbl,global_vars.table_objs[tn])	
 		
 		global_vars.incr_global_id()
-		#print ('....completed batch number {}'.format(global_vars.global_id - first_batch_id))
 			
 	print ('\nnumber of rows per batch {} \n\n'.format(global_vars.global_id_batch_size))
 		
@@ -611,24 +611,45 @@ def populate_table(ptbl,tbl):
 	pkey  = global_vars.table_keys['pkey']
 	pdkey = global_vars.table_keys['pdkey']
 	fkey  = global_vars.table_keys['fkey']
-		
+	fdkey = global_vars.table_keys['fdkey']
+	
+	
 	if ptbl.table_type == global_vars.table_keys['pdkey'] and tbl == None : 
 		return
-	dkey = ''
 	
+	dkey = ''
 	if ptbl.table_type == global_vars.table_keys['pdkey'] and tbl != None : 
-		dkey = str(md.random_from_list(ptbl.rows)[0])
+		dkey = str(md.random_from_list(ptbl.rows)[0])							# we assume the primary key is the first column in the row
+	
+	if ptbl.table_type == global_vars.table_keys['pkey'] :
+		pkColNames = ptbl.get_column_names_by_keytype(ptbl.table_type)
+
+	if ptbl.table_type == global_vars.table_keys['pdkey'] :
+		pdkColNames = ptbl.get_column_names_by_keytype(ptbl.table_type)
 		
 	if ptbl.table_type != global_vars.table_keys['pdkey'] and tbl == None : 
 		tbl = ptbl
+
 		
+	# nov 12, 2018 cglenn
+	# if parent and child are being processed and the parent is pkey or pdkey then  : if (colnames are equal) and ptbl is pkey and tbl is fkey 
+	# then link them ( tbl.fkey gets the str_gid
+	
 	delim_char = global_vars.delim_char
 	row = ''
 	str_gid = str(global_vars.global_id)
 	
 	for col in 	tbl.get_table_desc():
-		if col[2] == pkey or col[2] == fkey : row = row + str_gid + delim_char
-		if col[2] == pdkey : row = row + dkey + delim_char
+		if col[2] == pkey: 
+			row = row + str_gid + delim_char  
+			
+		if (col[2] == fkey) and (col[0] in pkColNames):
+			row = row + str_gid + delim_char  
+		
+		if (col[2] == fdkey) and (col[0] in pdkColNames):
+			row = row + dkey + delim_char  
+			
+		#if col[2] == pdkey : row = row + dkey + delim_char
 		
 		if col[2] == u'None' :
 			#print ('.... 10 row :: {} '.format(row))
@@ -640,11 +661,12 @@ def populate_table(ptbl,tbl):
 			if col[1] == 'phone'     : row = row + md.random_phone()         	  + delim_char  
 			if col[1] == 'int'       : row = row + str(md.random_int(1000,10000)) + delim_char  
 			if col[1] == 'vstr20'    : row = row + md.random_string(20)		 	  + delim_char 
-			if col[1] == 'vstr80'    : row = row + 'asasasas'			  + delim_char 
+			if col[1] == 'vstr80'    : row = row + md.random_string(80)			  + delim_char 
 			if col[1] == 'vstr128'   : row = row + md.random_string(128)	 	  + delim_char 
 			
 	tbl.rows.append(row[:-1])			
 
+	
 def get_parms_missing(jsonParms):
 		r=[]
 		try: 
