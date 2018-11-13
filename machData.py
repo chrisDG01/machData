@@ -330,7 +330,7 @@ def get_last_id():
 	
 
 def clear_all_process_status() :
-	for tbl in global_vars.table_relations.keys():
+	for tbl in global_vars.table_objs.values():
 		tbl.row_in_process = False
 	
 
@@ -570,10 +570,14 @@ def clear_all_table_rows():
 		if t.table_type != global_vars.table_keys['pdkey'] : t.clear_all_rows()
 		
 def write_tables_to_file():
+	delim_char = global_vars.delim_char
+	
 	for t in global_vars.table_objs.values():
 		if t.process_status == '' :  
 			with open(t.table_name+'.csv', "w") as write_file:
-				for l in t.rows: write_file.write(str(l)+'\n')
+				for l in t.rows: 
+					s = ''.join(c+delim_char for c in l)[:-1]
+					write_file.write(s+'\n')
 
 def populate_and_create_relationships():
 	# this will be replaced by a JSON object that describes the tables and maps the relationships
@@ -586,7 +590,7 @@ def populate_and_create_relationships():
 	max_loop = global_vars.global_id + global_vars.global_id_batch_size
 	while global_vars.global_id < max_loop:
 		
-		#clear_all_process_status()
+		clear_all_process_status()
 		for relation_list in global_vars.table_relations:
 			 
 			ptbl = global_vars.table_objs[relation_list[0]]
@@ -626,7 +630,6 @@ def populate_table(ptbl,tbl):
 	if ptbl.table_type != global_vars.table_keys['pdkey'] and tbl == None : 
 		tbl = ptbl
 
-		
 	# nov 12, 2018 cglenn
 	# if parent and child are being processed and the parent is pkey or pdkey then  : if (colnames are equal) and ptbl is pkey and tbl is fkey 
 	# then link them ( tbl.fkey gets the str_gid
@@ -634,31 +637,35 @@ def populate_table(ptbl,tbl):
 	delim_char = global_vars.delim_char
 	str_gid = str(global_vars.global_id)
 	
-	row = ''
+	row = []
+	if tbl.row_in_process == True:
+		row = tbl.rows.pop()
 	
 	for col in 	tbl.get_table_desc():
-		if col[2] in [ pkey,fkey ]:
-			row = row + str_gid + delim_char  
-			
-		if ((col[2] == fdkey) and (col[0] in pdkColNames)):
-			row = row + dkey + delim_char  
-			
-		#if col[2] == pdkey : row = row + dkey + delim_char
 		
-		if col[2] == u'None' :
-			#print ('.... 10 row :: {} '.format(row))
-			if col[1] == 'full_name' : row = row + md.random_full_name() 	 	  + delim_char  
-			if col[1] == 'dob'       : row = row + md.random_date(1945,1985) 	  + delim_char  
-			if col[1] == 'dtetm'     : row = row + md.random_date(1900,2020) 	  + delim_char  
-			if col[1] == 'address'   : row = row + md.random_addr()			 	  + delim_char  
-			if col[1] == 'email'     : row = row + str_gid + '@email.com' 	 	  + delim_char
-			if col[1] == 'phone'     : row = row + md.random_phone()         	  + delim_char  
-			if col[1] == 'int'       : row = row + str(md.random_int(1000,10000)) + delim_char  
-			if col[1] == 'vstr20'    : row = row + str('S' * 20)		 	      + delim_char 
-			if col[1] == 'vstr80'    : row = row + str('S' * 80)		 	      + delim_char 
-			if col[1] == 'vstr128'   : row = row + str('S' * 128)		 	      + delim_char 
+		if ((col[2] == fdkey) and (col[0] in pdkColNames)):
+			row.append(dkey)  # put in correct index of row....
 			
-	tbl.rows.append(row[:-1])			
+		if 	tbl.row_in_process == False:
+			if col[2] in [ pkey,fkey ]:
+				row.append(str_gid)
+			
+			#if col[2] == pdkey : row = row + dkey + delim_char
+			
+			if col[2] == u'None' :
+				#print ('.... 10 row :: {} '.format(row))
+				if col[1] == 'full_name' : row.append(md.random_full_name())
+				if col[1] == 'dob'       : row.append(md.random_date(1945,1985)) 	 
+				if col[1] == 'dtetm'     : row.append(md.random_date(1900,2020)) 	 
+				if col[1] == 'address'   : row.append(md.random_addr())			 	 
+				if col[1] == 'email'     : row.append(str_gid + '@email.com') 	 	
+				if col[1] == 'phone'     : row.append(md.random_phone())         	 
+				if col[1] == 'int'       : row.append(str(md.random_int(1000,10000)))
+				if col[1] == 'vstr20'    : row.append(str('S' * 20))		 	        
+				if col[1] == 'vstr80'    : row.append(str('S' * 80))		 	        
+				if col[1] == 'vstr128'   : row.append(str('S' * 128))		 	    
+				
+	tbl.rows.append(row)			
 	tbl.row_in_process = True
 	
 def get_parms_missing(jsonParms):
