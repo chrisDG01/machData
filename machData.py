@@ -470,7 +470,7 @@ def bcp_all_data():
 		if t.table_type == global_vars.table_keys['pdkey'] : 
 			t.process_status = 'loaded_to_database'
 	
-def define_domain_table(tbl):
+def load_domain_table(tbl):
 # this is replaced with  a JSON object that defines the domain tables
 #
 # column description list : [data_type, col_order, col_key_type] ; col_key_type : (PK, FK, DK, None) 
@@ -480,26 +480,6 @@ def define_domain_table(tbl):
 		tbl.row_desc['pTypeID']			 = ['int',0, global_vars.dkey]
 		tbl.row_desc['person_type_name'] = ['vstr80',1, None]
 	
-	if tbl.table_name == 'd_email':
-		tbl.row_desc['eTypeID']		   	 = ['int',0, global_vars.dkey]
-		tbl.row_desc['email_type'] 		 = ['vstr20',1, None]
-	
-	if tbl.table_name == 'd_phone':
-		tbl.row_desc['phTypeID']	   	 = ['int',0, global_vars.dkey]
-		tbl.row_desc['phone_type'] 		 = ['vstr20',1, None]
-
-	if tbl.table_name == 'd_biz_action':
-		tbl.row_desc['baTypeID']	   	 = ['int',0, global_vars.dkey]
-		tbl.row_desc['biz_action'] 		 = ['vstr80',1, None]
-
-	if tbl.table_name == 'd_address':
-		tbl.row_desc['addrTypeID']	 	 = ['int',0, global_vars.dkey]
-		tbl.row_desc['address_type'] 	 = ['vstr20',1, None]
-
-	if tbl.table_name == 'd_perm_action':
-		tbl.row_desc['permTypeID']		 = ['int',0, global_vars.dkey]
-		tbl.row_desc['perm_action'] 	 = ['vstr20',1, None]
-
 	
 	
 def populate_domain_table(tbl):
@@ -513,57 +493,6 @@ def populate_domain_table(tbl):
 		tbl.rows.append('2' + delim_char + 'surgeon')
 		tbl.rows.append('3' + delim_char + 'or_nurse')
 	
-	if tbl.table_name == 'd_email':
-		tbl.rows.append('0' + delim_char + 'primary')
-		tbl.rows.append('1' + delim_char + 'work')
-	
-	if tbl.table_name == 'd_phone':
-		tbl.rows.append('0' + delim_char + 'primary')
-		tbl.rows.append('1' + delim_char + 'work')
-
-	if tbl.table_name == 'd_biz_action':
-		tbl.rows.append('0' + delim_char + 'scheduling')
-		tbl.rows.append('1' + delim_char + 'patientRecords_All')
-		tbl.rows.append('2' + delim_char + 'patientRecords_Op')
-
-	if tbl.table_name == 'd_address':
-		tbl.rows.append('0' + delim_char + 'primary')
-		tbl.rows.append('1' + delim_char + 'work')
-
-	if tbl.table_name == 'd_perm_action':
-		tbl.rows.append('0' + delim_char + 'full')
-		tbl.rows.append('1' + delim_char + 'read')
-		tbl.rows.append('2' + delim_char + 'update')
-		tbl.rows.append('3' + delim_char + 'create')
-		tbl.rows.append('4' + delim_char + 'delete')		
-
-def	define_table(tbl):
-# this is replaced with the table / column names and definition defined in a JSON object
-	
-	if tbl.table_name == 'people':
-		tbl.row_desc['peopleID']	 	= ['int',      0, global_vars.table_keys['pkey']]
-		tbl.row_desc['full_name']	 	= ['full_name',1, None]
-		tbl.row_desc['date_of_birth']	= ['dob',      2, None]
-		
-	if tbl.table_name == 'address':
-		tbl.row_desc['addrTypeID']	 	= ['int',      0, global_vars.table_keys['pdkey']]
-		tbl.row_desc['peopleID']	 	= ['int',      1, global_vars.table_keys['fkey']]
-		tbl.row_desc['address']	 	    = ['address',  2, None]
-		
-	if tbl.table_name == 'email':
-		tbl.row_desc['eTypeID']	 	    = ['int',      0, global_vars.table_keys['pdkey']]
-		tbl.row_desc['peopleID']	 	= ['int',      1, global_vars.table_keys['fkey']]
-		tbl.row_desc['email']	 	    = ['email',  2, None]
-		
-	if tbl.table_name == 'phone':
-		tbl.row_desc['phTypeID']	 	= ['int',      0, global_vars.table_keys['pdkey']]
-		tbl.row_desc['peopleID']	 	= ['int',      1, global_vars.table_keys['fkey']]
-		tbl.row_desc['phone_num']	 	= ['phone',  2, None]
-		
-	if tbl.table_name == 'people_by_type':
-		tbl.row_desc['pTypeID']	 	    = ['int',      0, global_vars.table_keys['pdkey']]
-		tbl.row_desc['peopleID']	 	= ['int',      1, global_vars.table_keys['fkey']]	
-		
 			
 def clear_all_table_rows():
 	for t in global_vars.table_objs.values():
