@@ -118,6 +118,8 @@ class DatabaseTable():
 			col_dtype    = self.get_datatype_ddl(col_name)
 			col_ord      = self.row_desc[col_name][1]
 			if ddl[col_ord] == None : ddl[col_ord] = [col_name,col_dtype]
+		
+			
 		return ddl	
 	
 	def get_table_desc(self):
@@ -336,7 +338,9 @@ def clear_all_process_status() :
 
 def table_ddl(ddl_type,tbl):
 	table_name = tbl.table_name
+	#print('in table_ddl name [{}]\n'.format(table_name))
 	ddl = tbl.get_table_ddl()
+	#print('in table_ddl ddl [{}]\n'.format(ddl))
 	
 	if ddl_type == 'CREATE':
 		retstr = 'create table ' + table_name + ' ('
@@ -359,14 +363,12 @@ def check_tables():
 	tstat  = []
 	retlst = []
 	all_tables = global_vars.table_objs.values()
-	
-	
+		
 	runSQL = RunDDL_MSSQL('{SQL Server}','mssql-01.cq79i0ypklbj.us-east-2.rds.amazonaws.com','testEntity','mssql_01_admin','Th3Bomb!')
 	runSQL.open_conn()
 
 	for t in all_tables:
-		
-		if not(runSQL.check_if_object_exists(t)) : tstat.append(t)
+		if not(runSQL.check_if_object_exists(t)) : tstat.append(t.table_name)
 	
 	runSQL.close_conn()	
 	if tstat == []: 
@@ -470,29 +472,32 @@ def bcp_all_data():
 		if t.table_type == global_vars.table_keys['pdkey'] : 
 			t.process_status = 'loaded_to_database'
 	
-def load_domain_table(tbl):
-# this is replaced with  a JSON object that defines the domain tables
-#
-# column description list : [data_type, col_order, col_key_type] ; col_key_type : (PK, FK, DK, None) 
-# DK = domain key from domain ( loopup or code ) tables
-#
-	if tbl.table_name == 'd_person_type' :
-		tbl.row_desc['pTypeID']			 = ['int',0, global_vars.dkey]
-		tbl.row_desc['person_type_name'] = ['vstr80',1, None]
-	
-	
-	
-def populate_domain_table(tbl):
-# this is replaced with  a JSON object that declares the data in the domain tables
+def load_domain_tables(jsparms):
 
-	delim_char = global_vars.delim_char
+	g_domainTables = jsparms['g_domainTables']
+	data_tags  = jsparms['g_domainTable']		# Nov 5,2018 : change the name g_domainTable to g_dataTags in the web pages and .js includes
 	
-	if tbl.table_name == 'd_person_type' :
-		tbl.rows.append('0' + delim_char + 'patient')
-		tbl.rows.append('1' + delim_char + 'anethesiologist')
-		tbl.rows.append('2' + delim_char + 'surgeon')
-		tbl.rows.append('3' + delim_char + 'or_nurse')
-	
+	for k in g_domainTables.keys():
+		tblO = DatabaseTable(k,global_vars.table_keys['pdkey'],data_tags)
+		
+		ccnt = 0
+		rddict = {}
+		rdlist = g_domainTables[k]['rowDesc']
+		#print('rdlist [{}]'.format(rdlist))
+		
+		for r in  rdlist:
+			rddict[r[0]] = [r[1],ccnt,r[2]]
+			ccnt = ccnt + 1
+			#print('r[{}]'.format(r))
+			#print('rddict[{}]'.format(rddict[r[0]]))
+			
+		#print('99 rddict.keys[{}]'.format(rddict.keys()))	
+		#print('99 rddict.vals[{}]'.format(rddict.values()))	
+		
+		tblO.row_desc= rddict
+		tblO.rows = g_domainTables[k]['rowData']
+		global_vars.table_objs[k]=tblO
+
 			
 def clear_all_table_rows():
 	for t in global_vars.table_objs.values():
@@ -509,11 +514,6 @@ def write_tables_to_file():
 					write_file.write(s+'\n')
 
 def populate_and_create_relationships():
-	# this will be replaced by a JSON object that describes the tables and maps the relationships
-	# in building the relation list. Assume the global id is static through the entire list read .. 
-	# by enitre list I am refering to the list that contains the relation lists. 
-	# The relatino list is a multi dimesional arry ( list ) of lists. The larger list is what we process usinfg a single 
-	# global id. the global id is incremented with each iteration of the list
 	
 	clear_all_table_rows()
 	max_loop = global_vars.global_id + global_vars.global_id_batch_size
@@ -535,13 +535,14 @@ def populate_and_create_relationships():
 		
 		
 def populate_table(ptbl,tbl):
-	
-    
+	    
 	pkey  = global_vars.table_keys['pkey']
 	pdkey = global_vars.table_keys['pdkey']
 	fkey  = global_vars.table_keys['fkey']
 	fdkey = global_vars.table_keys['fdkey']
 	
+	pkColNames  = ''
+	pdkColNames = ''
 	
 	if ptbl.table_type == global_vars.table_keys['pdkey'] and tbl == None : 
 		return
@@ -555,6 +556,7 @@ def populate_table(ptbl,tbl):
 
 	if ptbl.table_type == global_vars.table_keys['pdkey'] :
 		pdkColNames = ptbl.get_column_names_by_keytype(ptbl.table_type)
+	
 		
 	if ptbl.table_type != global_vars.table_keys['pdkey'] and tbl == None : 
 		tbl = ptbl
@@ -562,38 +564,46 @@ def populate_table(ptbl,tbl):
 	# nov 12, 2018 cglenn
 	# if parent and child are being processed and the parent is pkey or pdkey then  : if (colnames are equal) and ptbl is pkey and tbl is fkey 
 	# then link them ( tbl.fkey gets the str_gid
+
+	print("ptbl: table_name = {}.....table_type = {}".format(ptbl.table_name,ptbl.table_type))
+	print("tbl:  table_name = {}.....table_type = {}".format(tbl.table_name,tbl.table_type))
+
 	
 	delim_char = global_vars.delim_char
 	str_gid = str(global_vars.global_id)
 	
-	row = []
+
+	row = [None] * len(tbl.row_desc)
 	if tbl.row_in_process == True:
 		row = tbl.rows.pop()
 	
+	cidx = 0
 	for col in 	tbl.get_table_desc():
-		
+		print("....tbl col:   {}.....pdkColNames = {}".format(col,pdkColNames))
 		if ((col[2] == fdkey) and (col[0] in pdkColNames)):
-			row.append(dkey)  # put in correct index of row....
+			row[cidx] = dkey  
+			print("....col[2] == fdkey & col[0] in pdkColNames .. col[2] [{}] row[{}]".format(col[2],row))
 			
 		if 	tbl.row_in_process == False:
 			if col[2] in [ pkey,fkey ]:
-				row.append(str_gid)
+				row[cidx] = str_gid
 			
 			#if col[2] == pdkey : row = row + dkey + delim_char
 			
 			if col[2] == u'None' :
 				#print ('.... 10 row :: {} '.format(row))
-				if col[1] == 'full_name' : row.append(md.random_full_name())
-				if col[1] == 'dob'       : row.append(md.random_date(1945,1985)) 	 
-				if col[1] == 'dtetm'     : row.append(md.random_date(1900,2020)) 	 
-				if col[1] == 'address'   : row.append(md.random_addr())			 	 
-				if col[1] == 'email'     : row.append(str_gid + '@email.com') 	 	
-				if col[1] == 'phone'     : row.append(md.random_phone())         	 
-				if col[1] == 'int'       : row.append(str(md.random_int(1000,10000)))
-				if col[1] == 'vstr20'    : row.append(str('S' * 20))		 	        
-				if col[1] == 'vstr80'    : row.append(str('S' * 80))		 	        
-				if col[1] == 'vstr128'   : row.append(str('S' * 128))		 	    
-				
+				if col[1] == 'full_name' : row[cidx]=md.random_full_name()
+				if col[1] == 'dob'       : row[cidx]=md.random_date(1945,1985) 	 
+				if col[1] == 'dtetm'     : row[cidx]=md.random_date(1900,2020) 	 
+				if col[1] == 'address'   : row[cidx]=md.random_addr()			 	 
+				if col[1] == 'email'     : row[cidx]=str_gid + '@email.com' 	 	
+				if col[1] == 'phone'     : row[cidx]=md.random_phone()         	 
+				if col[1] == 'int'       : row[cidx]=str(md.random_int(1000,10000))
+				if col[1] == 'vstr20'    : row[cidx]=str('S2' * 10)		 	        
+				if col[1] == 'vstr80'    : row[cidx]=str('S8' * 40)		 	        
+				if col[1] == 'vstr128'   : row[cidx]=str('Se' * 64)		 	    
+		cidx = cidx + 1
+		
 	tbl.rows.append(row)			
 	tbl.row_in_process = True
 	
@@ -622,6 +632,10 @@ def get_parms_missing(jsonParms):
 		except:
 			r.append('g_domainTable')
 			
+		try: 
+			b = jsonParms['g_domainTables']
+		except:
+			r.append('g_domainTables')	
 			
 		try: 
 			b = jsonParms['g_relationList']
@@ -648,6 +662,7 @@ if __name__ == '__main__':
 	
 	global_vars = GlobalVars(jsonParms)
 	
+	load_domain_tables(jsonParms)
 	
 	#print('keys {} '.format(global_vars.table_keys));
 		
@@ -682,9 +697,9 @@ if __name__ == '__main__':
 	
 	global_vars.all_to_stdout()	
 	
-	if (global_vars.write_to_DB):
+	if (global_vars.write_to_DB and global_vars.truncate_and_load):
+		
 		table_status = check_tables()
-		#print_and_split(table_status)
 		
 		if (table_status[0] != 'NONE_EXIST') and (table_status[0] != 'ALL_EXIST') :
 			print('these tables are missing ....{}'.format(table_status))
