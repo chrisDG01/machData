@@ -78,6 +78,173 @@
   
   } // loadInputValues
   
+function showRows(tblName) {
+
+  var tblData  = g_domainData[tblName]
+  var shw      = "<table id='tbl_rows'>"
+  var edt      = "<table id='tbl_edit'>"
+  shw = shw + "<tr colspan=2><td>" + tblName + "</td></tr>"
+	
+	
+  if (tblData) {
+	var nrows    = tblData.length
+	var ncols    = tblData[0].length
+	  
+	for (r = 0; r < nrows; r++) { 
+	    shw = shw + '<tr>'
+		for (c = 0; c < ncols; c++) {
+			shw = shw + '<td>' + tblData[r][c] + '</td>' 
+			edt = edt + "<td><input type='text' id='txt_edit_"+c+"' value='ddd'></td>"
+		} // for c	
+	    shw = shw + '</tr>'
+		edt = edt + '</tr>'
+		
+	} // for r
+  } // if
+  else
+  {
+     shw = shw + '<tr>'
+	 edt = edt + '<tr>'
+     for (var r=0; r<  g_tableList[tblName].length; r++) {
+			shw = shw + '<td>' + g_tableList[tblName][r][0] + '</td>'
+			edt = edt + "<td><input type='text' id='txt_edit_"+r+"' value='ddd'></td>"
+			
+			} // for
+	 shw = shw + '</tr>'
+	 edt = edt + '</tr>'
+  
+  } // else 
+  
+
+  shw = shw + '</table>'
+  edt = edt + '</table>'
+  
+  edt = edt + "<table><tr><td><input type='button' id='btn_addRow' value='Add Row' onclick='saveRow()'></td>"
+  edt = edt + "<td><input type='button' id='btn_SaveTable' value='Save Table' onclick='doSaveTable()'></td></tr>"
+  edt = edt + '</table>'
+  
+  document.getElementById('div_rows').innerHTML = shw;
+  document.getElementById('div_edit').innerHTML = edt;
+   
+
+} // showRows
+  
+
+function saveRow(tblName) {
+
+  var rowTable = document.getElementById('tbl_rows')
+  var rowNum   = rowTable.rows.length  
+  var edtIDs   = document.querySelectorAll('[id]');
+  var idsArr   = Array.from(edtIDs);
+  var rowData  = new Array(rowTable.rows[0].cells.length - 1)
+  var idName   = ''
+  var colNum   = 0
+  
+  
+  for (i=0; i<idsArr.length; i++) { 
+	idName = idsArr[i].id
+	if ( idName.startsWith('txt_edit_') ) { 
+		colNum = parseInt(idName.slice(idName.lastIndexOf('_') + 1))
+		rowData[colNum] = document.getElementById(idsArr[i].id).value;
+	} // if  
+  }	
+ //console.log(rowData)
+ var newRow     = rowTable.insertRow(-1);
+ newRow.id = 'edtRow_' + rowNum
+ newRow.ondblclick = (function() {delRow(this)});
+ for (i=0; i<rowData.length; i++) {
+	newRow.insertCell(i).innerHTML = rowData[i]
+  }
+ 
+ 
+} // saveRow
+  
+  function delRow(row){
+  
+	var rowTable = document.getElementById('tbl_rows')
+	var rID      = document.getElementById(row.id)
+	//console.log(rn.rowIndex)	
+	rowTable.deleteRow(rID.rowIndex); 
+  
+  } // delRow
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  function doTableToJSON(tblID) {
+	var jsonTbl   = {}
+    var tbl       = document.getElementById(tblID);
+	var rowA      = []
+	var dispr;
+	
+	jsonTbl[tableName] = []
+
+	for (r = 1; r < tbl.rows.length; r++) {
+	    rowA = [];
+		dr = r - 1
+		for ( c = 0; c < tbl.rows[r].cells.length; c++) {
+				if (c == 0) 
+				   { 
+				      rowA[c] = document.getElementById('tbl_desc_colName_'+r).value
+				    }
+				else
+				   { 
+				      rowA[c] = tbl.rows[r].cells[c].innerHTML
+				   }
+			}
+			
+	   jsonTbl[tableName][dr] = rowA;
+	} // for r 
+	return jsonTbl
+
+	} // doTableToJSON
+  
+  
+  
+  function showTables() {
+	var dtbls = [];
+	var shw = "<table id='tbl_tables'><tr>";
+	
+	for (var t in g_tableList) {
+	   if (g_tableList[t].toString().includes('PDK')) {dtbls.push(t)}
+	} // for
+
+		
+	for ( i = 0; i < dtbls.length; i++) {
+		shw = shw + "<td onclick=showRows('" + dtbls[i] + "')>" + dtbls[i] + "</td>"
+	}
+	shw = shw + "</tr>"
+	shw = shw + '</table>'
+	
+	document.getElementById('div_tables').innerHTML = shw ;
+ 
+  } // showTables
+     
+  
+  
+  function doSaveTable() {
+    
+   var jsTbl = doTableToJSON('tbl_rows');
+	
+   Object.assign(g_domainData,jsTbl);
+   
+   doShowRows();
+
+  } // doSaveTable
+
+  
+  
+  
 function doDesign() {
 	updateParams()
     putGlobalVars();
@@ -98,6 +265,7 @@ function doRelations() {
   
    distributeGlobalVars()
    loadInputValues()
+   showTables()
    
  }  // doOnLoad
    
@@ -116,25 +284,45 @@ function doRelations() {
 <style>
 
    	div.parameters {
-   		width:  500px;
-		height: 250px;
+   		width:  400px;
+		height: 380px;
 		margin: auto;
 		border: 3px solid #73AD21;
 		position: absolute; left: 50px; top: 100px; 
 	}
 	div.menu {
-   		width:  500px;
-		height: 150px;
+   		width: 800px;
+		height: 50px;
 		margin: auto;
 		border: 3px solid #73AD21;
-		position: absolute; left: 50px; top: 400px; 
+		position: absolute; left: 0px; top: 400px; 
 	}
-				
-	
+	div.tables {
+   		width:  380px;
+		height: 50px;
+		margin: auto;
+		border: 3px solid black;
+		position: absolute; left: 420px; top: 0px; 
+	}	
+	div.rows {
+   		width:  380px;
+		height: 280px;
+		margin: auto;
+		border: 3px solid blue;
+		position: absolute; left: 420px; top: 50px; 
+	}			
+	div.edit {
+   		width:  380px;
+		height: 50px;
+		margin: auto;
+		border: 3px solid green;
+		position: absolute; left: 420px; top: 330px; 
+	}
 	table.parameters {
-		border: 1px solid black;
+		border: 1px solid red;
 		width: 100%;
 		padding: 1px;
+		position: absolute; left: 0px; top: 0px; 
 	}	
 	
 	button.list {
@@ -179,6 +367,17 @@ function doRelations() {
 		<td>write_to_DB</td><td>			<input type='text' id='txt_writeToDb'  			value='false' ></td></td>
 	</tr>		
 </div>
+
+<div id='div_tables' class='tables' >
+</div>
+
+<div id='div_rows' class='rows' >
+</div>
+
+
+<div id='div_edit' class='edit' >
+</div>
+
 
 <div id='div_menu' class='menu' >
 

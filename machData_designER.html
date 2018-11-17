@@ -97,16 +97,7 @@
 	var dispr;
 	
 	jsonTbl[tableName] = []
-	
-//alert('doTableToJSON tblID [' + tblID + ']')	
-	/*
-	var r = 0;
-	for ( c = 0; c < tbl.rows[r].cells.length; c++) {
-		  rowA[c] = tbl.rows[r].cells[c].innerHTML;
-		}
-	jsonTbl[tableName][r] = rowA;
-	*/
-//alert('doTableToJSON tbl.rows[0] [' + tbl.rows[0].cells[0].innerHTML + ']')	
+
 	for (r = 1; r < tbl.rows.length; r++) {
 	    rowA = [];
 		dr = r - 1
@@ -119,17 +110,11 @@
 				   { 
 				      rowA[c] = tbl.rows[r].cells[c].innerHTML
 				   }
-					
-
-//alert('90 doTableToJSON jsonTbl [' + Object.keys(jsonTbl) + ']  vals [' + Object.values(jsonTbl) + ']')				   
+							   
 			}
 			
-//alert('doTableToJSON jsonTbl length [' + jsonTbl[tableName].length + ']')	
-
 	   jsonTbl[tableName][dr] = rowA;
-//alert('doTableToJSON r[' + r + ']  row[' + jsonTbl[tableName][dr] + ']')	   
 	} // for r 
-//alert('99 doTableToJSON jsonTbl [' + Object.keys(jsonTbl) + ']  vals [' + jsonTbl[tableName][0] + ']')		
 	return jsonTbl
 
 	} // doTableToJSON
@@ -145,16 +130,16 @@
  
  
  if (tblName == 'New-Table-Name') {
-//alert('10 tblName [' + tblName + ']'); 
+ 
      document.getElementById('txt_tableTitle').value = tblName;
-//alert('20 '); 	 
+ 	 
      tblDesc = tblDesc + "<tr onclick=doEdit(['trg',1])>"
 	 tblDesc = tblDesc + "<td><input type='text' id='tbl_desc_colName_1' value=''></td>"  
 	 tblDesc = tblDesc + '<td> </td>' 
 	 tblDesc = tblDesc + '<td> </td>' 
 	 tblDesc = tblDesc + '</tr>' 
 	 tblDesc = tblDesc + '</table>' 
-//alert('30 '); 	 
+ 	 
 	 }
  else
 	{
@@ -181,18 +166,14 @@
     } // for r 
 	tblDesc = tblDesc + '</table>'
     }
-	
-//alert('50 tblName [' + tblDesc + ']'); 
+
     document.getElementById('div_table').innerHTML = tblDesc;
-//alert('99 tblName '); 
 } // doShowTable 	
 
 
   function doAddTable() {
     var tableName = document.getElementById('txt_tableTitle').value;
-	
-//alert('doAddTable ...tableName [' + tableName + ']')
-	
+		
 	if (tableName == 'New-Table-Name') {
 		alert('Please name the new table...');
 		return
@@ -200,8 +181,6 @@
 	
 	var jsTbl = doTableToJSON('tbl_desc');
 	
-//alert('doAddTbale jsTbl keys [' + Object.keys(jsTbl) + ']  values [' + Object.values(jsTbl) + ']')
-
    Object.assign(g_tableList,jsTbl);
    
    doShowControl();
@@ -257,7 +236,7 @@
     
 	var k = Object.keys(g_keyTable);
 	var v = Object.values(g_keyTable);
-  //alert(k,v) 
+
 	var i = 0;
 	var shw = "<table border=1 id='tbl_keys'>";
    
@@ -277,8 +256,6 @@
 	var tblNames = Object.keys(g_tableList);
 	var shw = "<table border=1 id='tbl_control'>";
 	shw = shw + "<tr><td onclick=doShowTable('New-Table-Name')>Add A Table</td>"
-
-//alert('tblNames [' + tblNames + ']')
 		
 	for ( i = 0; i < tblNames.length; i++) {
 		shw = shw + "<td onclick=doShowTable('" + tblNames[i] + "')>" + tblNames[i] + "</td>"
@@ -305,7 +282,6 @@
 		var trg_background = 'white';
 	}
 	
-//alert(cmd + ' ' + border)		
 	
 	document.getElementById('tbl_keys').style.border       = border;
 	document.getElementById('tbl_keys').style.background   = src_background;

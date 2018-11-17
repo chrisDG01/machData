@@ -72,7 +72,7 @@ class GlobalVars():
 		self.table_keys				= jsonParms['g_keyTable']
 		self.table_objs				= create_table_objs(self,jsonParms)
 		self.table_relations		= format_table_relations(self,jsonParms['g_relationList'])
-	
+		
 	
 	def incr_global_id(self):
 		self.global_id = self.global_id + 1
@@ -473,31 +473,14 @@ def bcp_all_data():
 			t.process_status = 'loaded_to_database'
 	
 def load_domain_tables(jsparms):
-
-	g_domainTables = jsparms['g_domainTables']
-	data_tags  = jsparms['g_domainTable']		# Nov 5,2018 : change the name g_domainTable to g_dataTags in the web pages and .js includes
-	
-	for k in g_domainTables.keys():
-		tblO = DatabaseTable(k,global_vars.table_keys['pdkey'],data_tags)
+	dtbls = []
+	for t in jsparms['g_tableList'].keys():
+		if 'PDK' in ''.join(str(e) for e in jsparms['g_tableList'][t]): dtbls.append(t)
+		#print('t [{}] [{}]'.format(t,''.join(str(e) for e in jsparms['g_tableList'][t])))
 		
-		ccnt = 0
-		rddict = {}
-		rdlist = g_domainTables[k]['rowDesc']
-		#print('rdlist [{}]'.format(rdlist))
+	for k in dtbls:
+		global_vars.table_objs[k].rows = g_domainTableData[k]
 		
-		for r in  rdlist:
-			rddict[r[0]] = [r[1],ccnt,r[2]]
-			ccnt = ccnt + 1
-			#print('r[{}]'.format(r))
-			#print('rddict[{}]'.format(rddict[r[0]]))
-			
-		#print('99 rddict.keys[{}]'.format(rddict.keys()))	
-		#print('99 rddict.vals[{}]'.format(rddict.values()))	
-		
-		tblO.row_desc= rddict
-		tblO.rows = g_domainTables[k]['rowData']
-		global_vars.table_objs[k]=tblO
-
 			
 def clear_all_table_rows():
 	for t in global_vars.table_objs.values():
@@ -609,6 +592,8 @@ def populate_table(ptbl,tbl):
 	
 def get_parms_missing(jsonParms):
 		r=[]
+		d = json.dumps(jsonParms)
+		print('[{}]'.format(d))
 		try: 
 			b = jsonParms['g_parameters']
 		except :
@@ -633,10 +618,11 @@ def get_parms_missing(jsonParms):
 			r.append('g_domainTable')
 			
 		try: 
-			b = jsonParms['g_domainTables']
+			b = jsonParms['g_domainTableData']
 		except:
-			r.append('g_domainTables')	
+			r.append('g_domainTableData')	
 			
+		
 		try: 
 			b = jsonParms['g_relationList']
 		except :

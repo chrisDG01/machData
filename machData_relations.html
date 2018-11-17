@@ -444,29 +444,13 @@ function createRelationsList() {
 		ptbl = document.getElementById(idsArr[idxA[i]].id);
         
 		var ptname = ptbl.rows[0].cells[0].innerHTML
-		
-//alert('parent name     : ' + ptbl.rows[0].cells[0].innerHTML)
-//alert('... num of rows : ' + ptbl.rows.length)
-//alert('.. r[1] cells[0]: ' + ptbl.rows[1].cells[0].innerHTML)
-
-
-
-
-
+	
 		for (j = 2;  j <= ptbl.rows.length-1; j++ ) { 
-
-//alert('child name :' + ptbl.rows[j].cells[1].innerHTML)
-//alert('child col :'  + ptbl.rows[j].cells[2].innerHTML)
-//alert('child key :'  + ptbl.rows[j].cells[3].innerHTML)
-
 			clst.push(ptbl.rows[j].cells[1].innerHTML)
 		} // if 
 		
 	    relationList[ptname] = clst;
 	} // for i
-
-
-//alert('leaving relationList  :keys['  + Object.keys(relationList)  + ']  values[' + Object.values(relationList) + ']');
 
 	return relationList
 } //   createRelationsList
