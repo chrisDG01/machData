@@ -6,41 +6,6 @@
 </head>	
 <script>
 
-
-
-
-  function doDownloadFile(name) {
-  var jsonStr = JSON.stringify(doTableToJSON('tbl_desc'))
-	
-	const a = document.createElement('a');
-	const type = name.split(".").pop();
-	a.href = URL.createObjectURL( new Blob([jsonStr], { type:`text/${type === "txt" ? "plain" : type}` }) );
-	a.download = name;
-	a.click();
-	//document.getElementById('div_keys').innerHTML = jsonMDTxt + '....' + jsonData;
-  } // doDownloadFile
-  
-  function readSingleFile(evt) {
-    //Retrieve the first (and only!) File from the FileList object
-    var f = evt.target.files[0]; 
-  
-    if (f) {
-      var r = new FileReader();
-      r.onload = function(e) { 
-	      var contents = e.target.result;
-		  document.getElementById('div_keys').innerHTML = contents;
-		  jsonData = contents;
-
-      }
-      r.readAsText(f);
-    } else { 
-      alert("Failed to load file");
-    }
-  } // readSingleFile
-  
-  
-  // ================================================================================================= //
-  
   
   function doInitiateVars() {
 
@@ -78,60 +43,67 @@
   
   } // loadInputValues
   
+  
 function showRows(tblName) {
 
   var tblData  = g_domainData[tblName]
   var shw      = "<table id='tbl_rows'>"
-  var edt      = "<table id='tbl_edit'>"
+  var edt      = "<table id='tbl_edit'><tr>"
   shw = shw + "<tr colspan=2><td>" + tblName + "</td></tr>"
-	
+  
+  shw = shw + '<tr>'
+  for (i=0; i< g_tableList[tblName].length; i++) {
+	shw = shw + '<td>' + g_tableList[tblName][i][0] + '</td>'
+  } 
+  shw = shw + '</tr>'
+  	
 	
   if (tblData) {
+
 	var nrows    = tblData.length
 	var ncols    = tblData[0].length
-	  
+	var rcnt     = 0  
 	for (r = 0; r < nrows; r++) { 
-	    shw = shw + '<tr>'
+	    shw = shw + "<tr  id='editRow_'" +r+"' ondblclick=delRow(this)>"
 		for (c = 0; c < ncols; c++) {
 			shw = shw + '<td>' + tblData[r][c] + '</td>' 
-			edt = edt + "<td><input type='text' id='txt_edit_"+c+"' value='ddd'></td>"
+			if (rcnt == 0 ) {edt = edt + "<td><input type='text' id='txt_edit_"+c+"' value='~blank~'></td>";}
+
 		} // for c	
 	    shw = shw + '</tr>'
 		edt = edt + '</tr>'
+		rcnt ++
 		
 	} // for r
   } // if
   else
   {
-     shw = shw + '<tr>'
-	 edt = edt + '<tr>'
-     for (var r=0; r<  g_tableList[tblName].length; r++) {
-			shw = shw + '<td>' + g_tableList[tblName][r][0] + '</td>'
-			edt = edt + "<td><input type='text' id='txt_edit_"+r+"' value='ddd'></td>"
+ 
+     for (var r=0; r< g_tableList[tblName].length; r++) {
+			
+			edt = edt + "<td><input type='text' id='txt_edit_"+r+"' value='~blank~'></td>"
 			
 			} // for
-	 shw = shw + '</tr>'
 	 edt = edt + '</tr>'
   
   } // else 
   
-
   shw = shw + '</table>'
   edt = edt + '</table>'
-  
-  edt = edt + "<table><tr><td><input type='button' id='btn_addRow' value='Add Row' onclick='saveRow()'></td>"
-  edt = edt + "<td><input type='button' id='btn_SaveTable' value='Save Table' onclick='doSaveTable()'></td></tr>"
-  edt = edt + '</table>'
-  
+   edt = edt + "<table><tr><td><input type='button' id='btn_addRow' value='Save Row' onclick=saveRow('" + tblName + "')></td>"
+  edt = edt + "<td><input type='button' id='btn_SaveTable' value='Save Table' onclick=doSaveTable('" + tblName + "')></td></tr>"
+  edt = edt + "</table>"
+ 
   document.getElementById('div_rows').innerHTML = shw;
   document.getElementById('div_edit').innerHTML = edt;
-   
 
+   
 } // showRows
   
 
+  
 function saveRow(tblName) {
-
+console.log(tblName)
   var rowTable = document.getElementById('tbl_rows')
   var rowNum   = rowTable.rows.length  
   var edtIDs   = document.querySelectorAll('[id]');
@@ -148,62 +120,45 @@ function saveRow(tblName) {
 		rowData[colNum] = document.getElementById(idsArr[i].id).value;
 	} // if  
   }	
- //console.log(rowData)
- var newRow     = rowTable.insertRow(-1);
- newRow.id = 'edtRow_' + rowNum
- newRow.ondblclick = (function() {delRow(this)});
- for (i=0; i<rowData.length; i++) {
+
+  var newRow     = rowTable.insertRow(-1);
+  newRow.id = 'editRow_' + rowNum
+  newRow.ondblclick = (function() {delRow(this)});
+  
+  for (i=0; i<rowData.length; i++) {
 	newRow.insertCell(i).innerHTML = rowData[i]
   }
- 
- 
+  
 } // saveRow
+  
   
   function delRow(row){
   
 	var rowTable = document.getElementById('tbl_rows')
 	var rID      = document.getElementById(row.id)
-	//console.log(rn.rowIndex)	
+
 	rowTable.deleteRow(rID.rowIndex); 
   
   } // delRow
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   
   
   function doTableToJSON(tblID) {
 	var jsonTbl   = {}
     var tbl       = document.getElementById(tblID);
 	var rowA      = []
-	var dispr;
-	
+	var tableName = document.getElementById('tbl_rows').rows[0].cells[0].innerHTML
+    	
 	jsonTbl[tableName] = []
 
-	for (r = 1; r < tbl.rows.length; r++) {
+	// start at row 2 because 0 = domain table name ; 1 = column names
+    //	
+	for (r = 2; r < tbl.rows.length; r++) {    
 	    rowA = [];
-		dr = r - 1
 		for ( c = 0; c < tbl.rows[r].cells.length; c++) {
-				if (c == 0) 
-				   { 
-				      rowA[c] = document.getElementById('tbl_desc_colName_'+r).value
-				    }
-				else
-				   { 
-				      rowA[c] = tbl.rows[r].cells[c].innerHTML
-				   }
-			}
+	      rowA[c] = tbl.rows[r].cells[c].innerHTML
+		}
 			
-	   jsonTbl[tableName][dr] = rowA;
+	   jsonTbl[tableName][r-2] = rowA;
 	} // for r 
 	return jsonTbl
 
@@ -232,13 +187,12 @@ function saveRow(tblName) {
      
   
   
-  function doSaveTable() {
+  function doSaveTable(tblName) {
     
    var jsTbl = doTableToJSON('tbl_rows');
-	
    Object.assign(g_domainData,jsTbl);
    
-   doShowRows();
+   showRows(tblName);
 
   } // doSaveTable
 

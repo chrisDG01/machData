@@ -89,10 +89,6 @@ function putGlobalVars() {
 	if (Object.keys(g_parameters).length 	> 0) {g_machData_json.g_parameters 	 = g_parameters;}
 	if (Object.keys(g_domainData).length 	> 0) {g_machData_json.g_domainData 	 = g_domainData;}
 	
-
-//alert('in putGlobalVars g_relationList  :keys['  + Object.keys(g_machData_json.g_relationList)  + ']  values[' + Object.values(g_machData_json.g_relationList) + ']');	
-
-	
 	sessionStorage.g_machData_json =  JSON.stringify(g_machData_json); 
 
 } // putGlobalVars	

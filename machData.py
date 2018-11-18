@@ -28,9 +28,9 @@ class GlobalVars():
 				if (c[2] == self.table_keys['fdkey']) and (ttyp == self.table_keys['noK']) : ttyp = self.table_keys['fdkey']
 				
 		return ttyp
-	
-	def __init__(self,jsonParms):
 
+		
+	def __init__(self,jsonParms):
 	
 		def create_table_objs(self, jparms):     # nov 8,2018 cglenn : improve this 
 			table_list = {}
@@ -90,8 +90,6 @@ class GlobalVars():
 		print('self.delim_char   			: {}\n'.format(self.delim_char ))         
 		print('self.truncate_and_load 		: {}\n'.format(self.truncate_and_load ))	
 		print('self.write_to_DB 			: {}\n'.format(self.write_to_DB ))	
-		
-		#print('self.table_relations		: {}\n'.format(self.table_relations ))	 
 		print('==================================================================\n')
 		
 		
@@ -475,12 +473,18 @@ def bcp_all_data():
 def load_domain_tables(jsparms):
 	dtbls = []
 	for t in jsparms['g_tableList'].keys():
-		if 'PDK' in ''.join(str(e) for e in jsparms['g_tableList'][t]): dtbls.append(t)
-		#print('t [{}] [{}]'.format(t,''.join(str(e) for e in jsparms['g_tableList'][t])))
+		if 'PDK' in ''.join(str(e) for e in jsparms['g_tableList'][t]): 
+			dtbls.append(t)
 		
-	for k in dtbls:
-		global_vars.table_objs[k].rows = g_domainTableData[k]
-		
+	for t in dtbls:
+		for r in jsparms['g_domainData'][t]:
+			cr = []
+			for c in r:
+				cr.append(str(c))
+				
+			global_vars.table_objs[t].rows.append(cr)		
+			
+		#print("t [{}] rows [{}]".format(t,	global_vars.table_objs[t].rows))
 			
 def clear_all_table_rows():
 	for t in global_vars.table_objs.values():
@@ -496,6 +500,7 @@ def write_tables_to_file():
 					s = ''.join(c+delim_char for c in l)[:-1]
 					write_file.write(s+'\n')
 
+					
 def populate_and_create_relationships():
 	
 	clear_all_table_rows()
@@ -510,7 +515,8 @@ def populate_and_create_relationships():
 			populate_table(ptbl,None)
 				
 			for tn in relation_list[1:]:
-				populate_table(ptbl,global_vars.table_objs[tn])	
+				if str(tn) != '':
+					populate_table(ptbl,global_vars.table_objs[str(tn)])	
 		
 		global_vars.incr_global_id()
 			
@@ -548,8 +554,8 @@ def populate_table(ptbl,tbl):
 	# if parent and child are being processed and the parent is pkey or pdkey then  : if (colnames are equal) and ptbl is pkey and tbl is fkey 
 	# then link them ( tbl.fkey gets the str_gid
 
-	print("ptbl: table_name = {}.....table_type = {}".format(ptbl.table_name,ptbl.table_type))
-	print("tbl:  table_name = {}.....table_type = {}".format(tbl.table_name,tbl.table_type))
+	#print("ptbl: table_name = {}.....table_type = {}".format(ptbl.table_name,ptbl.table_type))
+	#print("tbl:  table_name = {}.....table_type = {}".format(tbl.table_name,tbl.table_type))
 
 	
 	delim_char = global_vars.delim_char
@@ -562,10 +568,10 @@ def populate_table(ptbl,tbl):
 	
 	cidx = 0
 	for col in 	tbl.get_table_desc():
-		print("....tbl col:   {}.....pdkColNames = {}".format(col,pdkColNames))
+		#print("....tbl col:   {}.....pdkColNames = {}".format(col,pdkColNames))
 		if ((col[2] == fdkey) and (col[0] in pdkColNames)):
 			row[cidx] = dkey  
-			print("....col[2] == fdkey & col[0] in pdkColNames .. col[2] [{}] row[{}]".format(col[2],row))
+			#print("....col[2] == fdkey & col[0] in pdkColNames .. col[2] [{}] row[{}]".format(col[2],row))
 			
 		if 	tbl.row_in_process == False:
 			if col[2] in [ pkey,fkey ]:
@@ -593,7 +599,7 @@ def populate_table(ptbl,tbl):
 def get_parms_missing(jsonParms):
 		r=[]
 		d = json.dumps(jsonParms)
-		print('[{}]'.format(d))
+		#print('[{}]'.format(d))
 		try: 
 			b = jsonParms['g_parameters']
 		except :
@@ -618,9 +624,9 @@ def get_parms_missing(jsonParms):
 			r.append('g_domainTable')
 			
 		try: 
-			b = jsonParms['g_domainTableData']
+			b = jsonParms['g_domainData']
 		except:
-			r.append('g_domainTableData')	
+			r.append(g_domainData)	
 			
 		
 		try: 
@@ -650,9 +656,6 @@ if __name__ == '__main__':
 	
 	load_domain_tables(jsonParms)
 	
-	#print('keys {} '.format(global_vars.table_keys));
-		
-
 	md = MockData()
 	
 	# d_ are domain tables ( aka lookup, drop down ) -- they define the codes of the model
