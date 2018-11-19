@@ -10,40 +10,25 @@
 <script>
 
   
-  function doDownloadFile(name) {
+  function doDownloadFile() {
 
     putGlobalVars();
-	//
-	// nov 9,2018 cglenn
-	// prep for download - remove some directive data that is not needed in machData.py
-	//
-	/*
-	var dnLoad_MD = g_machData_json;
-	var t;
 	
-
+	var fn = document.getElementById('fileinput').value
+	var fname = ''
 	
-	delete dnLoad_MD.g_tableList.new_table;
-	
-	
-	for (t in dnLoad_MD.g_tableList) {
-		if (dnLoad_MD.g_tableList[t][0][0] == 'colName' && dnLoad_MD.g_tableList[t][0][1] == 'dataTag' & dnLoad_MD.g_tableList[t][0][2] == 'keyType') {
-			dnLoad_MD.g_tableList[t].splice(0,1);
-		} // if
-	} // for
-
-    //
-	// end of prep for download
-	//
-	var jsonStr = JSON.stringify(dnLoad_MD);  
-	*/
+	console.log(fn)
+	if (fn == '') { fn = 'machData.json' }
+		
+	fname = prompt('Enter new name for the parameter file -- or use : [' + fn + ']') 
+	if ( fname == '' ) { fname = fn}
 	
 	var jsonStr = JSON.stringify(g_machData_json);  
 	
 	const a = document.createElement('a');
-	const type = name.split(".").pop();
+	const type = fname.split(".").pop();
 	a.href = URL.createObjectURL( new Blob([jsonStr], { type:`text/${type === "txt" ? "plain" : type}` }) );
-	a.download = name;
+	a.download = fname;
 	a.click();
 	//document.getElementById('div_keys').innerHTML = jsonMDTxt + '....' + jsonData;
   } // doDownloadFile
@@ -575,18 +560,10 @@
   <table>
   <tr>
 	<td>
-		<button id='btn_dnloadVar' class='list' onclick="doDownloadFile('machData.txt')">download</button>
-	</td>
-	<!-- 
-	<td>
-		<button id='btn_tableToJSON' class='list' onclick="doTableToJSON('tbl_desc')">see key table</button>
-	</td>
-	-->
-	<td>
-		<button id='btn_changeDisplay' class='list' onclick="doDebug()">DEBUG</button>
+		<button id='btn_dnloadVar' class='list' onclick="doDownloadFile('')">download</button>
 	</td>
 	<td>
-		upload a file to a var : <input type="file" id="fileinput" >upload</input>
+		upload a file to a var : <input type="file" id="fileinput" value=''>
 	</td>
   </tr>
   <tr>

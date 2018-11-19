@@ -45,8 +45,8 @@
   function doInitiateVars() {
 
 	distributeGlobalVars()
-	g_editControl.childTable == '' 
-	g_editControl.parentTable == ''
+	g_editControl.childTable  = '' 
+	g_editControl.parentTable = ''
 		
   } // doInitiateVars
  
@@ -77,13 +77,14 @@
 				      rowA[c] = tbl.rows[r].cells[c].innerHTML
 				   }
 				
-			   jsonTbl[tableName][r] = rowA;
+			    jsonTbl[tableName][r] = rowA;
 			}
 	} // for r 
 	
 	return jsonTbl
 
 	} // doTableToJSON
+	
 	
  function doGetColNum(tname,keyType) {
     var tbl      = g_tableList[tname]  
@@ -102,6 +103,7 @@
 	
  } // doGetColNum
  
+ 
  function doGetKeyTypes(tname) {
 	var cols      = g_tableList[tname]
 	var colKTypes = {}
@@ -117,11 +119,11 @@
     var shw = ''
 	
 	var pkCol  = doGetColNum(tname, 'PK')
-	if (pkCol == null ) { pkCol = doGetColNum(tname, 'PDK') }
+	if ( pkCol == null ) { pkCol = doGetColNum(tname, 'PDK') }
 	
 	if ( pkCol == null ) { return null }
 	
-	shw = "<div><table id='tbl_parent_" + tname + "' class='tbl_parentObj'>"
+	shw = "<div><table id='tbl_parent_" + tname + "' class='parentObj'>"
 	shw = shw + "<tr colspan=4 ><td onclick=doEdit('parentTable','" + tname + "')>" + tname + "</td></tr>"
 	shw = shw + "<tr colspan=2 class='parentObj'><td>" + tbl[pkCol][0] + "</td><td>" + tbl[pkCol][2] + "</td></tr>"
 	shw = shw + "</table></div>"
@@ -134,7 +136,6 @@
   function doPopulateParentDisplay(tList) {
 	var rc = []
 	var tbl = document.getElementById('tbl_parentTables')
-
 	for ( i = 0; i < tList.length; i++) {
 	
       	rc = doGetNextCell();
@@ -148,7 +149,7 @@
  
   function doPopulateChildDisplay(tList) {
 
-	var shw = "<table border=1 id='tbl_childTables'>";
+	var shw = "<table border=1 id='childTables'>";
 
 	shw = shw + "<tr>"
 	for ( i = 0; i < tList.length; i++) {
@@ -167,17 +168,16 @@
     
 	// find tbl_parent_" + tname + " and add a row for each asociated table in g_relations
 
-
-//alert('in add child tables to display ... keys g_relationList [' + Object.keys(g_relationList) + ']')	
-	
 	for (var ptname in g_relationList) {
-
-//alert('... in add child tables to display ... child list for [' + ptname +'] = [' +g_relationList[ptname] + ']')	
-		
+ 
 		for (var i =0; i< g_relationList[ptname].length; i++) {
-		    
-//alert('in add child tables to display ... ptname [' + ptname + ']  ctname [' + g_relationList[ptname][i] + ']')		
-            var id     = 'tbl_parent_' + ptname
+          var ctname = g_relationList[ptname][i]
+		  if (ptname != null && ctname != null ) { 
+	console.log(ctname)	  
+		  
+		  doAddChildToParent(ptname, ctname) }
+
+/* 		  var id     = 'tbl_parent_' + ptname
 			var ctname = g_relationList[ptname][i]
 			var ptbl   = document.getElementById(id);
 			var pKey   = ptbl.rows[1].cells[1].innerHTML;
@@ -193,15 +193,12 @@
 			var cKeyType = row.insertCell(3);
 	
 	
-	
 			padCell.innerHTML = "o";
 			ctnCell.innerHTML = ctname
 			cColName.innerHTML = 'colName'
 			cKeyType.innerHTML = 'key'
-	//ctKey.innerHTML  = fKey;
-			
-			
-			
+		
+*/			
 		} // ctname
 	
 	} // for ptname
@@ -221,9 +218,8 @@
 	
 	for (var i=0; i<tList.length; i++) { 
 	  tn = tList[i];
-//alert('doPopAll Displays for loop : tn [' + tn + '] tList.length [' + tList.length + ']')	  
+
 	  kt = doGetKeyTypes(tn);
-//alert('doPopAll Displays for loop : tn [' + tn + '] kt [' + kt + ']')
 
 	  if ( kt.includes('PK') || kt.includes('PDK') ) 
 	     {  pList.push(tList[i]) } 
@@ -233,17 +229,10 @@
 
 	} // for
 
-//alert('calling popChildDisplay with [' + cList + ']')
-
 	doPopulateChildDisplay(cList)
-//alert('calling popParentDisplay with [' + pList + ']')
-
 	doPopulateParentDisplay(pList)
-	
 	doAddChildTables()
-	
-
-	
+		
  } // doPopulateAllDisplays
  
 
@@ -256,7 +245,7 @@
 	var cellColor = (cmd == 'on') ? 'blue' : 'white'
 	
 	if (tblType == 'child') {
-		var tbl = document.getElementById('tbl_childTables');
+		var tbl = document.getElementById('childTables');
 		
 		while ( r < tbl.rows.length && (!fnd)) { 
 			c = 0;
@@ -297,14 +286,11 @@
  
  
  
- function doAddChildToParent() {
+ function doAddChildToParent(ptname, ctname) {
   
-	var ctname   = g_editControl.childTable;
-	var ptname   = g_editControl.parentTable;
+	//var ctname   = g_editControl.childTable;
+	//var ptname   = g_editControl.parentTable;
 	var ptbl     = document.getElementById("tbl_parent_" + ptname);
-//alert('ptbl ['+ptbl.rows[0].cells[0].innerHTML+']')
-//alert('ptbl ['+ptbl.rows[1].cells[1].innerHTML+']')
- 
 	var pKey     = ptbl.rows[1].cells[1].innerHTML;
 	var ctbl     = g_tableList[ctname];
 	
@@ -322,12 +308,9 @@
 	
     if (ckColNum == null) { alert('Foriegn key match not found in parent table ... '); return }	
 	
-//alert('ctname =[' + ctname + ']  pKey [' + pKey + ']  ckColNum ['+ckColNum+']')
-	
 	row.ondblclick = (function() {doDeleteChild(ptname,ctname)});
     padCell.innerHTML  = 'o';
 	ctnCell.innerHTML  = ctname;
-//alert('ctbl ['+ctbl[ckColNum][2]+']')
 
 	cColName.innerHTML = ctbl[ckColNum][0];
 	cKeyType.innerHTML = ctbl[ckColNum][2];
@@ -338,8 +321,6 @@
   
     
   function doEdit(cmd, tblName) { 
-//alert('doEdit ' + cmd + ' ' + tblName)
-  
   
   if (cmd == 'childTable') { 
 		if (g_editControl.childTable != '') {
@@ -359,7 +340,7 @@
 	} // if parent
 
   if (g_editControl.childTable != '' && g_editControl.parentTable != '' ) {
-		doAddChildToParent( g_editControl.parentTable, g_editControl.childTable )
+		doAddChildToParent(g_editControl.parentTable, g_editControl.childTable)
         doHighLiteTable('child',  g_editControl.childTable, 'off')
 		doHighLiteTable('parent', g_editControl.parentTable,'off')
 		g_editControl.childTable = ''
@@ -420,8 +401,8 @@
 		shw = shw + "</tr>"
 
 	} //for r
+	document.getElementById('div_parentList').innerHTML = shw ;
 
-    document.write(shw)
  } //  doPutParentTable
   
   
@@ -434,6 +415,7 @@ function createRelationsList() {
     var ptbl;
 	var clst = [];
 	var relationList = {};
+	var cn = ''
 
 	for (i=0; i<idsArr.length; i++) { 
 		if ( idsArr[i].id.startsWith('tbl_parent_') ) { idxA.push(i) }
@@ -445,8 +427,9 @@ function createRelationsList() {
         
 		var ptname = ptbl.rows[0].cells[0].innerHTML
 	
-		for (j = 2;  j <= ptbl.rows.length-1; j++ ) { 
-			clst.push(ptbl.rows[j].cells[1].innerHTML)
+		for (j = 2;  j < ptbl.rows.length; j++ ) { 
+			cn = ptbl.rows[j].cells[1].innerHTML
+			if (cn != '' && cn != null) { clst.push(cn) }
 		} // if 
 		
 	    relationList[ptname] = clst;
@@ -461,7 +444,6 @@ function createRelationsList() {
   
 function doDesign() {
 	g_relationList = createRelationsList()
-//alert('going to design g_relationList  :keys['  + Object.keys(g_relationList)  + ']  values[' + Object.values(g_relationList) + ']');	
     putGlobalVars();
 	window.location.href = "machData_designER.html";
   
@@ -470,7 +452,6 @@ function doDesign() {
  
 function doParameters() {
 	g_relationList = createRelationsList()
-//alert('going to parms g_relationList  :keys['  + Object.keys(g_relationList)  + ']  values[' + Object.values(g_relationList) + ']');	
     putGlobalVars();
 	window.location.href = "machData_parameters.html";
   
@@ -479,15 +460,7 @@ function doParameters() {
   
  function doOnLoad() {
    doInitiateVars();
-   //doDebug()
    doPopulateAllDisplays()
-
-   //document.getElementById('fileinput').addEventListener('change', readSingleFile, false);
-   //doShowKeys();
-   //doShowDomain();
-   //doShowTableList();
-   //doShowTable(tableObj);
-
 
  }  // doOnLoad
    
@@ -519,22 +492,22 @@ function doParameters() {
 		border: 3px solid #73AD21;
 		position: absolute; left: 50px; top: 275px; 
 	}
+			
+	div.menu {
+   		width:  1000px;
+		height: 100px;
+		margin: auto;
+		border: 3px solid #73AD21;
+		position: absolute; left: 50px; top: 575px; 
+	}
 	
-	div.parentObj{
+	div.parentObj {
    		width:  30px;
 		height: 30px;
 		margin: auto;
 		border: 1px solid #cccccc;		
 	}
-		
-	div.test {
-   		width:  1000px;
-		height: 100px;
-		margin: auto;
-		border: 3px solid #73AD21;
-		position: absolute; left: 50px; top: 400px; 
-	}
-		
+	
 	table.parentGrid {
 		border: 1px solid black;
 		width: 100%;
@@ -593,15 +566,12 @@ function doParameters() {
 
 </div>
 
-<div id='test' class='test' >
+<div id='div_menu' class='menu' >
 
   <button id='btn_design' class='list' onclick="doDesign()">goto design</button>
-  
   <button id='btn_parms' class='list' onclick="doParameters()">goto params</button>
-  <button id='btn_allIds' class='list' onclick="createRelationsList()">all ids</button>
+  <!--<button id='btn_allIds' class='list' onclick="createRelationsList()">all ids</button>-->
   
-  
-  <p id="demo"></p>
 
 </div>  
 
