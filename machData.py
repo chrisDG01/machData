@@ -497,7 +497,7 @@ def write_tables_to_file():
 		if t.process_status == '' :  
 			with open(t.table_name+'.csv', "w") as write_file:
 				for l in t.rows: 
-					s = ''.join(c+delim_char for c in l)[:-1]
+					s = ''.join(str(c)+delim_char for c in l)[:-1]
 					write_file.write(s+'\n')
 
 					

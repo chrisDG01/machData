@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title> build relation..</title>
+	<title> manage run parameters and domain data..</title>
 	 <script  src="globalSessionVars.js"></script>
 </head>	
 <script>
@@ -26,9 +26,9 @@
 	g_parameters.delim_char           	= document.getElementById('txt_delimChar').value  		
 	g_parameters.truncate_and_load 		= document.getElementById('txt_truncateAndLoad').value  
 	g_parameters.write_to_DB 		 	= document.getElementById('txt_writeToDb').value  		
- 
- 
+  
  } // updateParams
+ 
  
  function loadInputValues() {
 
@@ -64,10 +64,10 @@ function showRows(tblName) {
 	var ncols    = tblData[0].length
 	var rcnt     = 0  
 	for (r = 0; r < nrows; r++) { 
-	    shw = shw + "<tr  id='editRow_'" +r+"' ondblclick=delRow(this)>"
+	    shw = shw + "<tr  id='domainRow_" +r.toString()+"' onclick=doEdit(this,'EDIT')>"
 		for (c = 0; c < ncols; c++) {
 			shw = shw + '<td>' + tblData[r][c] + '</td>' 
-			if (rcnt == 0 ) {edt = edt + "<td><input type='text' id='txt_edit_"+c+"' value='~blank~'></td>";}
+			if (rcnt == 0 ) {edt = edt + "<td><input type='text' id='txt_col_"+c+"' value='b w/data'></td>";}
 
 		} // for c	
 	    shw = shw + '</tr>'
@@ -79,9 +79,9 @@ function showRows(tblName) {
   else
   {
  
-     for (var r=0; r< g_tableList[tblName].length; r++) {
+     for (var c=0; c< g_tableList[tblName].length; c++) {
 			
-			edt = edt + "<td><input type='text' id='txt_edit_"+r+"' value='~blank~'></td>"
+			edt = edt + "<td><input type='text' id='txt_edit_"+c+"' value='b no data'></td>"
 			
 			} // for
 	 edt = edt + '</tr>'
@@ -90,9 +90,12 @@ function showRows(tblName) {
   
   shw = shw + '</table>'
   edt = edt + '</table>'
-   edt = edt + "<table><tr><td><input type='button' id='btn_addRow' value='Save Row' onclick=saveRow('" + tblName + "')></td>"
-  edt = edt + "<td><input type='button' id='btn_SaveTable' value='Save Table' onclick=doSaveTable('" + tblName + "')></td></tr>"
-  edt = edt + "</table>"
+  
+  edt = edt + "<table><tr>"
+  edt = edt + "<td><input type='button' id='btn_delRow' value='Delete Row' onclick=delRow()></td>"
+  edt = edt + "<td><input type='button' id='btn_addRow' value='Save Row' onclick=saveRow()></td>"
+  edt = edt + "<td><input type='button' id='btn_SaveTable' value='Save Table' onclick=doSaveTable('" + tblName + "')></td>"
+  edt = edt + "</tr></table>"
  
   document.getElementById('div_rows').innerHTML = shw;
   document.getElementById('div_edit').innerHTML = edt;
@@ -100,10 +103,46 @@ function showRows(tblName) {
    
 } // showRows
   
-
+	
+	
+function doEdit(row, cmd) {   
+	
+	var rowTable = document.getElementById('tbl_rows')
+	
+	if ( cmd == 'EDIT' ) { 
+		var ncols = rowTable.rows[1].cells.length
+		var txt_editID = ''
+		var c = 0
+		
+		if (g_editControl.editRow != null) { 
+			rowTable.rows[g_editControl.editRow.rowIndex].style.background = 'white'; 
+		}
+		rowTable.rows[row.rowIndex].style.background = 'lightgrey';
+		g_editControl.editRow = row
+		
+		for (c=0; c < ncols; c++) {
+			txt_editID = 'txt_col_' + c.toString()
+			document.getElementById(txt_editID).value = rowTable.rows[row.rowIndex].cells[c].innerHTML
+		} // for
+	}
+	
+	if ( cmd == 'CLEAR_SELECT') 
+	{
+		if (g_editControl.editRow != null) { 
+			rowTable.rows[g_editControl.editRow.rowIndex].style.background = 'white'; 
+		}
+		g_editControl.editRow = null
+		for (var c=0; c < rowTable.rows[1].cells.length; c++) {    // edit table has same number of rows as the rows table .. use row table cell count here
+			document.getElementById('txt_col_'+c.toString()).value = '';
+		} //for
+	}	
+  } // doEdit
   
-function saveRow(tblName) {
-console.log(tblName)
+  
+  
+  
+function saveRow() {
+
   var rowTable = document.getElementById('tbl_rows')
   var rowNum   = rowTable.rows.length  
   var edtIDs   = document.querySelectorAll('[id]');
@@ -112,33 +151,41 @@ console.log(tblName)
   var idName   = ''
   var colNum   = 0
   
-  
   for (i=0; i<idsArr.length; i++) { 
 	idName = idsArr[i].id
-	if ( idName.startsWith('txt_edit_') ) { 
+	if ( idName.startsWith('txt_col_') ) { 
 		colNum = parseInt(idName.slice(idName.lastIndexOf('_') + 1))
 		rowData[colNum] = document.getElementById(idsArr[i].id).value;
 	} // if  
   }	
 
-  var newRow     = rowTable.insertRow(-1);
-  newRow.id = 'editRow_' + rowNum
-  newRow.ondblclick = (function() {delRow(this)});
-  
-  for (i=0; i<rowData.length; i++) {
-	newRow.insertCell(i).innerHTML = rowData[i]
+  if (g_editControl.editRow == null) {
+    var newRow     	= rowTable.insertRow(-1);
+	//newRow.id 		= 'editRow_' + rowNum
+    newRow.onclick 	= (function() {doEdit(this, 'EDIT')});
   }
-  
+  else
+  {
+    var newRow     = g_editControl.editRow
+  }
+      
+  for (i=0; i<rowData.length; i++) {
+	newRow.cells[i].innerHTML = rowData[i]
+  }
+  doEdit(null,'CLEAR_SELECT')
 } // saveRow
   
   
-  function delRow(row){
   
-	var rowTable = document.getElementById('tbl_rows')
-	var rID      = document.getElementById(row.id)
-
+  function delRow(){
+    
+	var rowTable 	= document.getElementById('tbl_rows')
+	var rID      	= document.getElementById(g_editControl.editRow.id)
+	
+   	doEdit(null,'CLEAR_SELECT')
 	rowTable.deleteRow(rID.rowIndex); 
-  
+	
+
   } // delRow
   
   
@@ -291,7 +338,7 @@ function doRelations() {
 
 <body onload='doOnLoad()'>
 
-<h1>create mach data relations (ver 2.0):</h1>
+<h1>manage mach data run parameters and domain data:</h1>
 <br>
 
 <div id='div_parameters' class='parameters'>
