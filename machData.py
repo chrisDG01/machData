@@ -97,7 +97,7 @@ class DatabaseTable():
 	def __init__(self,table_name,table_type,data_tags):
 		self.table_name = table_name
 		self.table_type = table_type
-		self.process_status = ''
+		self.process_status = []
 		self.data_types = data_tags
 		self.row_desc = {}
 		self.rows     = []
@@ -220,7 +220,7 @@ class MockData:
             d = '0' + str(d)
         else:
             d = str(d)
-        return m + '/' + d + '/' + y
+        return  y + '-' + m + '-' + d 
 
     def random_phone(self):
         a = str(self.random_int(310,760))
@@ -329,7 +329,7 @@ def get_last_id():
 
 	
 
-def clear_all_process_status() :
+def clear_all_row_in_progress() :
 	for tbl in global_vars.table_objs.values():
 		tbl.row_in_process = False
 	
@@ -357,7 +357,9 @@ def table_ddl(ddl_type,tbl):
 	return retstr
 
 
+	
 def check_tables():
+	# return list of table names that do not exist on database
 	tstat  = []
 	retlst = []
 	all_tables = global_vars.table_objs.values()
@@ -366,7 +368,8 @@ def check_tables():
 	runSQL.open_conn()
 
 	for t in all_tables:
-		if not(runSQL.check_if_object_exists(t)) : tstat.append(t.table_name)
+		if ('not_in_db' not in t.process_status) :
+			if not(runSQL.check_if_object_exists(t)) : tstat.append(str(t.table_name))
 	
 	runSQL.close_conn()	
 	if tstat == []: 
@@ -389,7 +392,8 @@ def check_indexes():
 	runSQL.open_conn()
     
 	for t in all_tables:
-		if not(runSQL.check_if_index_exists(t)) : tstat.append(t)
+		if ('not_in_db' not in t.process_status) :
+			if not(runSQL.check_if_index_exists(t)) : tstat.append(t)
 	
 	runSQL.close_conn()	
 
@@ -440,7 +444,8 @@ def drop_all_indexes():
 
 	do_all = ''
 	for t in global_vars.table_objs.values():
-		do_all = do_all + 'DROP INDEX ' + t.get_index_name_and_col()['name'] + ';\n'
+		if ('not_in_db' not in t.process_status) :
+			do_all = do_all + 'DROP INDEX ' + t.get_index_name_and_col()['name'] + ';\n'
 			
 	runSQL = RunDDL_MSSQL('{SQL Server}','mssql-01.cq79i0ypklbj.us-east-2.rds.amazonaws.com','testEntity','mssql_01_admin','Th3Bomb!')
 	runSQL.open_conn()
@@ -453,7 +458,8 @@ def truncate_and_drop_tables():
 	do_all = ''
 	
 	for t in global_vars.table_objs.values():
-		do_all = do_all + table_ddl('DROP',t) + '\n'
+		if ('not_in_db' not in t.process_status) :
+			do_all = do_all + table_ddl('DROP',t) + '\n'
 		
 	runSQL = RunDDL_MSSQL('{SQL Server}','mssql-01.cq79i0ypklbj.us-east-2.rds.amazonaws.com','testEntity','mssql_01_admin','Th3Bomb!')
 	runSQL.open_conn()
@@ -465,10 +471,12 @@ def bcp_all_data():
 	delim_char = global_vars.delim_char
 	do_all = ''
 	for t in global_vars.table_objs.values():
-		do_bcp = 'bcp ' + t.table_name + ' in ' + t.table_name + '.csv -Smssql-01.cq79i0ypklbj.us-east-2.rds.amazonaws.com -Umssql_01_admin -PTh3Bomb! -dtestEntity -c -t"'+delim_char+'"'
-		os.system(do_bcp)
-		if t.table_type == global_vars.table_keys['pdkey'] : 
-			t.process_status = 'loaded_to_database'
+		if ('not_in_db' not in t.process_status) :
+			do_bcp = 'bcp ' + t.table_name + ' in ' + t.table_name + '.csv -Smssql-01.cq79i0ypklbj.us-east-2.rds.amazonaws.com -Umssql_01_admin -PTh3Bomb! -dtestEntity -c -t"'+delim_char+'"'
+			os.system(do_bcp)
+			# 11/22/18 cglenn : cannot remmeber why this check is here....
+			if t.table_type == global_vars.table_keys['pdkey'] : 
+				t.process_status.append('loaded_to_database')				
 	
 def load_domain_tables(jsparms):
 	dtbls = []
@@ -494,11 +502,11 @@ def write_tables_to_file():
 	delim_char = global_vars.delim_char
 	
 	for t in global_vars.table_objs.values():
-		if t.process_status == '' :  
-			with open(t.table_name+'.csv', "w") as write_file:
-				for l in t.rows: 
-					s = ''.join(str(c)+delim_char for c in l)[:-1]
-					write_file.write(s+'\n')
+			if ('loaded_to_database' not in t.process_status) or ('not_in_db' not in t.process_status):  
+				with open(t.table_name+'.csv', "w") as write_file:
+					for l in t.rows: 
+						s = ''.join(str(c)+delim_char for c in l)[:-1]
+						write_file.write(s+'\n')
 
 					
 def populate_and_create_relationships():
@@ -507,7 +515,7 @@ def populate_and_create_relationships():
 	max_loop = global_vars.global_id + global_vars.global_id_batch_size
 	while global_vars.global_id < max_loop:
 		
-		clear_all_process_status()
+		clear_all_row_in_progress()
 		for relation_list in global_vars.table_relations:
 			 
 			ptbl = global_vars.table_objs[relation_list[0]]
@@ -691,10 +699,11 @@ if __name__ == '__main__':
 		table_status = check_tables()
 		
 		if (table_status[0] != 'NONE_EXIST') and (table_status[0] != 'ALL_EXIST') :
-			print('these tables are missing ....{}'.format(table_status))
-			exit(1)
+			print('these tables are missing ....{}'.format(str(table_status)))
+			for t in table_status :
+				global_vars.table_objs[t].process_status.append('not_in_db')
 		
-		if (table_status[0] == 'ALL_EXIST' and global_vars.truncate_and_load): 
+		if (global_vars.truncate_and_load): 
 			truncate_and_drop_tables()
 			create_all_tables()
 		

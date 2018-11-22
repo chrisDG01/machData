@@ -43,7 +43,7 @@
   
   } // loadInputValues
   
-  
+
 function showRows(tblName) {
 
   var tblData  = g_domainData[tblName]
@@ -58,17 +58,17 @@ function showRows(tblName) {
   shw = shw + '</tr>'
   	
 	
-  if (tblData) {
+  if (tblName    in g_domainData == true) {
 
 	var nrows    = tblData.length
 	var ncols    = tblData[0].length
 	var rcnt     = 0  
 	for (r = 0; r < nrows; r++) { 
-	    shw = shw + "<tr  id='domainRow_" +r.toString()+"' onclick=doEdit(this,'EDIT')>"
+	    shw = shw + "<tr  id='selectedRow_" +r.toString()+"'  style='background:white' onclick=doEdit(this,'EDIT')>"
+		
 		for (c = 0; c < ncols; c++) {
 			shw = shw + '<td>' + tblData[r][c] + '</td>' 
-			if (rcnt == 0 ) {edt = edt + "<td><input type='text' id='txt_col_"+c+"' value='b w/data'></td>";}
-
+			
 		} // for c	
 	    shw = shw + '</tr>'
 		edt = edt + '</tr>'
@@ -76,24 +76,22 @@ function showRows(tblName) {
 		
 	} // for r
   } // if
-  else
-  {
- 
-     for (var c=0; c< g_tableList[tblName].length; c++) {
-			
-			edt = edt + "<td><input type='text' id='txt_edit_"+c+"' value='b no data'></td>"
-			
-			} // for
-	 edt = edt + '</tr>'
-  
-  } // else 
   
   shw = shw + '</table>'
+  
+  for (var c=0; c< g_tableList[tblName].length; c++) {
+	edt = edt + "<td><input type='text' id='txt_col_"+c+"' value=''></td>"
+	} // for
+  edt = edt + '</tr>'
+	 
+	 
   edt = edt + '</table>'
   
   edt = edt + "<table><tr>"
   edt = edt + "<td><input type='button' id='btn_delRow' value='Delete Row' onclick=delRow()></td>"
   edt = edt + "<td><input type='button' id='btn_addRow' value='Save Row' onclick=saveRow()></td>"
+  edt = edt + "<td><input type='button' id='btn_delRow' value='Delete Row' onclick=delRow()></td>"
+  edt = edt + "<td><input type='button' id='btn_clearTable' value='Clear Selections' onclick=doEdit('','CLEAR_SELECT')></td>"
   edt = edt + "<td><input type='button' id='btn_SaveTable' value='Save Table' onclick=doSaveTable('" + tblName + "')></td>"
   edt = edt + "</tr></table>"
  
@@ -103,8 +101,7 @@ function showRows(tblName) {
    
 } // showRows
   
-	
-	
+ 
 function doEdit(row, cmd) {   
 	
 	var rowTable = document.getElementById('tbl_rows')
@@ -114,7 +111,7 @@ function doEdit(row, cmd) {
 		var txt_editID = ''
 		var c = 0
 		
-		if (g_editControl.editRow != null) { 
+		 if (g_editControl.editRow != '') { 
 			rowTable.rows[g_editControl.editRow.rowIndex].style.background = 'white'; 
 		}
 		rowTable.rows[row.rowIndex].style.background = 'lightgrey';
@@ -127,19 +124,18 @@ function doEdit(row, cmd) {
 	}
 	
 	if ( cmd == 'CLEAR_SELECT') 
-	{
-		if (g_editControl.editRow != null) { 
+	{		
+	    for (var c=0; c < rowTable.rows[1].cells.length; c++) {    // edit table has same number of rows as the rows table .. use row table cell count here
+			document.getElementById('txt_col_'+c.toString()).value = '';
+		} // for
+		if (g_editControl.editRow != '' && (g_editControl.editRow.rowIndex >= 0 &&  g_editControl.editRow.rowIndex < rowTable.rows.length)) { 
 			rowTable.rows[g_editControl.editRow.rowIndex].style.background = 'white'; 
 		}
-		g_editControl.editRow = null
-		for (var c=0; c < rowTable.rows[1].cells.length; c++) {    // edit table has same number of rows as the rows table .. use row table cell count here
-			document.getElementById('txt_col_'+c.toString()).value = '';
-		} //for
+		g_editControl.editRow = ''
 	}	
   } // doEdit
   
-  
-  
+
   
 function saveRow() {
 
@@ -159,19 +155,27 @@ function saveRow() {
 	} // if  
   }	
 
-  if (g_editControl.editRow == null) {
+  if (g_editControl.editRow == '') { 
     var newRow     	= rowTable.insertRow(-1);
-	//newRow.id 		= 'editRow_' + rowNum
     newRow.onclick 	= (function() {doEdit(this, 'EDIT')});
+	newRow.id       = 'selectedRow_' + rowTable.rows.length.toString()
+	newRow.style.background = 'white';
+	
+
   }
   else
   {
-    var newRow     = g_editControl.editRow
+    var newRow = document.getElementById(g_editControl.editRow.id)
   }
       
   for (i=0; i<rowData.length; i++) {
+    if 	( g_editControl.editRow == '' ) { newRow.insertCell(i); }
 	newRow.cells[i].innerHTML = rowData[i]
   }
+  
+  //if (g_editControl.editRow != '') { 
+//			rowTable.rows[g_editControl.editRow.rowIndex].style.background = 'white'; 
+//		}
   doEdit(null,'CLEAR_SELECT')
 } // saveRow
   
@@ -182,8 +186,8 @@ function saveRow() {
 	var rowTable 	= document.getElementById('tbl_rows')
 	var rID      	= document.getElementById(g_editControl.editRow.id)
 	
-   	doEdit(null,'CLEAR_SELECT')
-	rowTable.deleteRow(rID.rowIndex); 
+   	rowTable.deleteRow(rID.rowIndex); 
+	doEdit(null,'CLEAR_SELECT')
 	
 
   } // delRow
@@ -266,6 +270,7 @@ function doRelations() {
   
    distributeGlobalVars()
    loadInputValues()
+   g_editControl.editRow = ''
    showTables()
    
  }  // doOnLoad
