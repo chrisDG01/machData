@@ -7,7 +7,7 @@ var g_parameters    = {}
 var g_domainTable   = {}	
 var g_keyTable      = {}    
 var g_domainData	= {}
-	
+var g_numOfdomainTable = 11 	
 					
 
 
@@ -19,25 +19,27 @@ function distributeGlobalVars() {
 			g_machData_json = JSON.parse(sessionStorage.g_machData_json);	
 		}							
 								
-	if (('g_domainTable' in g_machData_json) == true )  
+	if  (('g_domainTable' in g_machData_json) == true )  
 		{
-			g_domainTable = g_machData_json.g_domainTable
+			if ( Object.keys(g_machData_json.g_domainTable).length ==  g_numOfdomainTable)  {
+				g_domainTable = g_machData_json.g_domainTable
+			}	
+			else
+			{
+				g_domainTable.int 		= 'integer'
+				g_domainTable.vstr20 	= 'varchar(20)'
+				g_domainTable.vstr80 	= 'varchar(80)'
+				g_domainTable.vstr128 	= 'varchar(128)'
+				g_domainTable.dtetm 	= 'datetime'
+				g_domainTable.phone 	= 'varchar(20)'
+				g_domainTable.email 	= 'varchar(40)'
+				g_domainTable.address 	= 'varchar(128)'
+				g_domainTable.full_name = 'varchar(128)'
+				g_domainTable.dob 		= 'datetime'
+				g_domainTable.amt 		= 'numeric(10,2)'
+			} // else g_domain
 		}
-		else
-		{
-			g_domainTable.int 		= 'integer'
-			g_domainTable.vstr20 	= 'varchar(20)'
-			g_domainTable.vstr80 	= 'varchar(80)'
-			g_domainTable.vstr128 	= 'varchar(128)'
-			g_domainTable.dtetm 	= 'datetime'
-			g_domainTable.phone 	= 'varchar(20)'
-			g_domainTable.email 	= 'varchar(40)'
-			g_domainTable.address 	= 'varchar(128)'
-			g_domainTable.full_name = 'varchar(128)'
-			g_domainTable.dob 		= 'datetime'
-			
-		} // else g_domain
-	
+		
 	if (('g_keyTable' in g_machData_json) == true )  
 		{
 			g_keyTable = g_machData_json.g_keyTable

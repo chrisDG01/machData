@@ -49,7 +49,7 @@ function showRows(tblName) {
   var tblData  = g_domainData[tblName]
   var shw      = "<table id='tbl_rows'>"
   var edt      = "<table id='tbl_edit'><tr>"
-  shw = shw + "<tr colspan=2><td>" + tblName + "</td></tr>"
+  shw = shw + "<tr colspan=2><th>" + tblName + "</th></tr>"
   
   shw = shw + '<tr>'
   for (i=0; i< g_tableList[tblName].length; i++) {
@@ -58,7 +58,7 @@ function showRows(tblName) {
   shw = shw + '</tr>'
   	
 	
-  if (tblName    in g_domainData == true) {
+  if (tblName    in g_domainData == true)  {
 
 	var nrows    = tblData.length
 	var ncols    = tblData[0].length
@@ -88,8 +88,7 @@ function showRows(tblName) {
   edt = edt + '</table>'
   
   edt = edt + "<table><tr>"
-  edt = edt + "<td><input type='button' id='btn_delRow' value='Delete Row' onclick=delRow()></td>"
-  edt = edt + "<td><input type='button' id='btn_addRow' value='Save Row' onclick=saveRow()></td>"
+   edt = edt + "<td><input type='button' id='btn_addRow' value='Save Row' onclick=saveRow()></td>"
   edt = edt + "<td><input type='button' id='btn_delRow' value='Delete Row' onclick=delRow()></td>"
   edt = edt + "<td><input type='button' id='btn_clearTable' value='Clear Selections' onclick=doEdit('','CLEAR_SELECT')></td>"
   edt = edt + "<td><input type='button' id='btn_SaveTable' value='Save Table' onclick=doSaveTable('" + tblName + "')></td>"
@@ -219,7 +218,7 @@ function saveRow() {
   
   function showTables() {
 	var dtbls = [];
-	var shw = "<table id='tbl_tables'><tr>";
+	var shw = "<table id='tbl_tables' class='tables'><tr>";
 	
 	for (var t in g_tableList) {
 	   if (g_tableList[t].toString().includes('PDK')) {dtbls.push(t)}
@@ -228,6 +227,7 @@ function saveRow() {
 		
 	for ( i = 0; i < dtbls.length; i++) {
 		shw = shw + "<td onclick=showRows('" + dtbls[i] + "')>" + dtbls[i] + "</td>"
+		if ((i+1) % 4 == 0) { shw = shw + '</tr><tr>' }
 	}
 	shw = shw + "</tr>"
 	shw = shw + '</table>'
@@ -240,8 +240,11 @@ function saveRow() {
   
   function doSaveTable(tblName) {
     
-   var jsTbl = doTableToJSON('tbl_rows');
-   Object.assign(g_domainData,jsTbl);
+	var jsTbl = doTableToJSON('tbl_rows');
+	
+	if (Object.values(jsTbl).length > 0) {
+		Object.assign(g_domainData,jsTbl);
+	}	
    
    showRows(tblName);
 
@@ -301,31 +304,41 @@ function doRelations() {
 		height: 50px;
 		margin: auto;
 		border: 3px solid #73AD21;
-		position: absolute; left: 0px; top: 400px; 
+		position: absolute; left: 0px; top: 500px; 
 	}
 	div.tables {
-   		width:  380px;
-		height: 50px;
+   		width:  480px;
+		height: 150px;
 		margin: auto;
 		border: 3px solid black;
 		position: absolute; left: 420px; top: 0px; 
+		overflow: auto;
 	}	
 	div.rows {
-   		width:  380px;
+   		width:  480px;
 		height: 280px;
 		margin: auto;
 		border: 3px solid blue;
-		position: absolute; left: 420px; top: 50px; 
+		position: absolute; left: 420px; top: 150px; 
 	}			
 	div.edit {
-   		width:  380px;
+   		width:  480px;
 		height: 50px;
 		margin: auto;
 		border: 3px solid green;
-		position: absolute; left: 420px; top: 330px; 
+		position: absolute; left: 420px; top: 430px; 
 	}
 	table.parameters {
 		border: 1px solid red;
+		width: 100%;
+		padding: 1px;
+		position: absolute; left: 0px; top: 0px; 
+	}	
+	td {
+		border: 1px solid black;
+	}	
+	table.tables {
+		border: 1px solid blue;
 		width: 100%;
 		padding: 1px;
 		position: absolute; left: 0px; top: 0px; 

@@ -108,7 +108,7 @@
  function doShowTable(tblName) {
  
 
- var tblDesc  = "<table id='tbl_desc' border=1 class='tbl_desc'>";
+ var tblDesc  = "<table id='tbl_desc'  class='tbl_desc'>";
 
  
  tblDesc = tblDesc + "<tr><th>ColName</th><th>DataTag</th><th>Key</th></tr>"
@@ -200,7 +200,7 @@
   
   
   // 
-  // nov 11, 2018 cglenn : combine doShowDomain & doShowKeys into one function with parameters
+  // nov 11, 2018 cglenn : to do :: combine doShowDomain & doShowKeys into one function with parameters
   //
   function doShowDomain() {
   	var k = Object.keys(g_domainTable);
@@ -223,7 +223,7 @@
 	var v = Object.values(g_keyTable);
 
 	var i = 0;
-	var shw = "<table border=1 id='tbl_keys'>";
+	var shw = "<table  id='tbl_keys'>";
    
 	for ( i = 0; i < k.length; i++) {
 		shw = shw + "<tr onclick=doEdit(['keyType','src'," + i + ",1])><td>" + k[i] + "<td>" + v[i] + "</tr></td>"
@@ -238,12 +238,15 @@
   function doShowControl() {
 
 	var i = 0;
+	var j = 0;
+	var cells_per_row = 10
 	var tblNames = Object.keys(g_tableList);
-	var shw = "<table border=1 id='tbl_control'>";
-	shw = shw + "<tr><td onclick=doShowTable('New-Table-Name')>Add A Table</td>"
+	var shw = "<table   id='tbl_control'>";
+	shw = shw + "<tr><td onclick=doShowTable('New-Table-Name')><b>Add A Table</b></td>"
 		
 	for ( i = 0; i < tblNames.length; i++) {
 		shw = shw + "<td onclick=doShowTable('" + tblNames[i] + "')>" + tblNames[i] + "</td>"
+		if ((i+1) % cells_per_row == 0) { shw = shw + '</tr><tr>' }
 	}
 	shw = shw + "</tr>"
 	shw = shw + '</table>'
@@ -424,7 +427,7 @@
 		height: 300px;
 		margin: auto;
 		border: 3px solid #73AD21;
-		position: absolute; left: 500px; top: 80px; 
+		position: absolute; left: 500px; top: 200px; 
 	}
 	
 	div.key {
@@ -432,7 +435,7 @@
 		height: 300px;
 		margin: auto;
 		border: 3px solid #73AD21;
-		position: absolute; left: 720px; top: 80px; 
+		position: absolute; left: 720px; top: 200px; 
 	}
 	
 	div.tableTitle {
@@ -459,11 +462,12 @@
 	}
 	
 	div.control {
-   		width:  400px;
+   		width:  1000px;
 		height: 100px;
 		margin: auto;
 		border: 3px solid #73AD21;
-		position: absolute; left: 20px; top: 80px; 
+		position: absolute; left: 50px; top: 80px; 
+		overflow: auto;
 	}
 	
 	div.test {
@@ -471,7 +475,7 @@
 		height: 100px;
 		margin: auto;
 		border: 3px solid #73AD21;
-		position: absolute; left: 20px; top: 600px; 
+		position: absolute; left: 50px; top: 600px; 
 	}
 	
 	button.list {
@@ -506,6 +510,9 @@
 	
 	table.tblEdit {
 		width: 100%;
+	}
+	td {
+		border: 1px solid black;
 	}
 	
 </style>

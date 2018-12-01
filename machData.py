@@ -103,6 +103,16 @@ class DatabaseTable():
 		self.rows     = []
 		self.row_in_process = False
 		
+	def is_row_in_progress(self):
+		if ( len(self.rows) > 0 ) : 
+			r = self.rows.pop()
+			for c in r: 
+				if c == '_$noColValue' :
+					self.rows.append(r)
+					return True
+			self.rows.append(r)
+		return False
+		
 	def clear_all_rows(self):
 		self.rows = []
 		
@@ -149,6 +159,7 @@ class DatabaseTable():
 	def get_column_names_by_keytype(self, keyType):
 		cn = []		
 		for col_name in self.row_desc.keys():
+			print('row desc [{}] search key [{}]'.format(self.row_desc[col_name][2], keyType))
 			if self.row_desc[col_name][2] == keyType :
 				cn.append(col_name)
 		return cn
@@ -160,12 +171,12 @@ class DatabaseTable():
 		
 class MockData:
 
-    def __init__(self):
+	def __init__(self):
 
-        self.name_list    = [['Adam', 'Abel','Amelia','Ava','Alfie,'],
-                            ['Bob','Bander'],
-                            ['Chris', 'Candice','Charlie'],
-                            ['Debra', 'Darwin'],
+		self.name_list    = [['Adam', 'Abel','Amelia','Ava','Alfie,'],
+							['Bob','Bander'],
+							['Chris', 'Candice','Charlie'],
+							['Debra', 'Darwin'],
 							['Emily'],
 							['Freddie'],
 							['George','Grace'],
@@ -178,8 +189,8 @@ class MockData:
 							['Oscar','Olivia','Oliver'],
 							['Sophia']]
 
-        self.street_list = [['Allster Ave', 'Abigail Court'],
-                            ['Bin Ave','Binder Road'],
+		self.street_list = [['Allster Ave', 'Abigail Court'],
+							['Bin Ave','Binder Road'],
 							['Cedar'],
 							['Eighth','Elm'],
 							['Fifth' ],
@@ -193,62 +204,65 @@ class MockData:
 							['View'],  
 							['Washington']]
 
-        self.city_list   = [['Arch City', 'Abel Town'],
-                            ['Big Bend','Brandy Town','Berkeley'],
+		self.city_list   = [['Arch City', 'Abel Town'],
+							['Big Bend','Brandy Town','Berkeley'],
 							['Foster City'],
 							['Oakland'],
 							['Richmond'],
 							['San Francisco']]
 
-    def random_int(self, s,e):
-        return random.randint(s,e)
+	def random_int(self, s,e):
+		return random.randint(s,e)
 
+	def random_amt(self, s,e):
+		return round(random.randint(s,e)*1.0/1.1,2)
+		
 	def random_string(self, l):
 		return str('S' * l)
 				
-    def random_date(self, sy,ey):
-        y = str(self.random_int(sy,ey))
+	def random_date(self, sy,ey):
+		y = str(self.random_int(sy,ey))
+		
+		m = self.random_int(1,12)
+		if m < 10 :
+			m = '0' + str(m)
+		else:
+			m = str(m)
+		
+		d = self.random_int(1, 28)
+		if d < 10 :
+			d = '0' + str(d)
+		else:
+			d = str(d)
+		return  y + '-' + m + '-' + d 
 
-        m = self.random_int(1,12)
-        if m < 10 :
-            m = '0' + str(m)
-        else:
-            m = str(m)
+	def random_phone(self):
+		a = str(self.random_int(310,760))
+		
+		b = str(self.random_int(200,900))
+		c = str(self.random_int(1000, 9000))
+		return '(' + a + ')' + b + '-' + c
 
-        d = self.random_int(1, 28)
-        if d < 10 :
-            d = '0' + str(d)
-        else:
-            d = str(d)
-        return  y + '-' + m + '-' + d 
-
-    def random_phone(self):
-        a = str(self.random_int(310,760))
-
-        b = str(self.random_int(200,900))
-        c = str(self.random_int(1000, 9000))
-        return '(' + a + ')' + b + '-' + c
-
-    def random_from_list(self,lst):
-        n = len(lst) - 1
-        return lst[self.random_int(0, n)]
-
-    def get_random_string(self,lst):
-        l = self.random_from_list(lst)
-        return self.random_from_list(l)
-
-    def random_full_name(self):
-        f = self.get_random_string(self.name_list)
-        l = self.get_random_string(self.name_list)
-        return f + ' ' + l
-
-    def random_addr(self):
-        n = self.random_int(1000, 2300)
-        s = self.get_random_string(self.street_list)
-        c = self.get_random_string(self.city_list)
-        z = self.random_int(90000, 97000)
-        return str(n) + ' ' + s + ', ' + c + ' ' + str(z)
-				  		
+	def random_from_list(self,lst):
+		n = len(lst) - 1
+		return lst[self.random_int(0, n)]
+	
+	def get_random_string(self,lst):
+		l = self.random_from_list(lst)
+		return self.random_from_list(l)
+	
+	def random_full_name(self):
+		f = self.get_random_string(self.name_list)
+		l = self.get_random_string(self.name_list)
+		return f + ' ' + l
+	
+	def random_addr(self):
+		n = self.random_int(1000, 2300)
+		s = self.get_random_string(self.street_list)
+		c = self.get_random_string(self.city_list)
+		z = self.random_int(90000, 97000)
+		return str(n) + ' ' + s + ', ' + c + ' ' + str(z)
+						
 		
 		
 		
@@ -358,63 +372,45 @@ def table_ddl(ddl_type,tbl):
 
 
 	
-def check_tables():
-	# return list of table names that do not exist on database
-	tstat  = []
-	retlst = []
+def set_all_table_status():
+	
 	all_tables = global_vars.table_objs.values()
 		
 	runSQL = RunDDL_MSSQL('{SQL Server}','mssql-01.cq79i0ypklbj.us-east-2.rds.amazonaws.com','testEntity','mssql_01_admin','Th3Bomb!')
 	runSQL.open_conn()
 
 	for t in all_tables:
-		if ('not_in_db' not in t.process_status) :
-			if not(runSQL.check_if_object_exists(t)) : tstat.append(str(t.table_name))
+		if (runSQL.check_if_object_exists(t)) : t.process_status.append('in_db')
 	
 	runSQL.close_conn()	
-	if tstat == []: 
-		retlst = ['ALL_EXIST']
 			
-	if len(tstat) == len(all_tables): 
-		retlst = ['NONE_EXIST']
-		
-	if (retlst == []) and (len(tstat) != len(all_tables)): 
-		retlst = tstat
-		
-	return retlst	
 	
 
 
 def check_indexes():
-	tstat = []
 	all_tables = global_vars.table_objs.values()
 	runSQL = RunDDL_MSSQL('{SQL Server}','mssql-01.cq79i0ypklbj.us-east-2.rds.amazonaws.com','testEntity','mssql_01_admin','Th3Bomb!')
 	runSQL.open_conn()
     
 	for t in all_tables:
-		if ('not_in_db' not in t.process_status) :
-			if not(runSQL.check_if_index_exists(t)) : tstat.append(t)
+		if ('in_db' in t.process_status) :
+			if (runSQL.check_if_index_exists(t)) : t.process_status.append('has_index')
 	
 	runSQL.close_conn()	
 
-	if tstat == []: 
-		retlst = ['ALL_EXIST']
-		
-	if len(tstat) == len(all_tables):
-		retlst = ['NONE_EXIST']
-		
-	if (tstat != [] and len(tstat) != len(all_tables)): 
-		retlst = all_tables
-		
-	return retlst	
 		
 	
 	
-def create_all_tables():
+def create_all_tables(ttyp = None):
 	do_all = ''
 	for t in global_vars.table_objs.values():
-		do_all = do_all + table_ddl('CREATE',t) + ';\n'
 		
+		if (ttyp == 'DOMAIN') and (t.table_type == global_vars.table_keys['pdkey']) :
+			do_all = do_all + table_ddl('CREATE',t) + ';\n'
+			
+		if (ttyp != 'DOMAIN') and (t.table_type != global_vars.table_keys['pdkey']):
+			do_all = do_all + table_ddl('CREATE',t) + ';\n'
+				
 	#print_and_split(do_all)			
 	runSQL = RunDDL_MSSQL('{SQL Server}','mssql-01.cq79i0ypklbj.us-east-2.rds.amazonaws.com','testEntity','mssql_01_admin','Th3Bomb!')
 	runSQL.open_conn()
@@ -444,8 +440,9 @@ def drop_all_indexes():
 
 	do_all = ''
 	for t in global_vars.table_objs.values():
-		if ('not_in_db' not in t.process_status) :
+		if ('has_index' in t.process_status) :
 			do_all = do_all + 'DROP INDEX ' + t.get_index_name_and_col()['name'] + ';\n'
+			
 			
 	runSQL = RunDDL_MSSQL('{SQL Server}','mssql-01.cq79i0ypklbj.us-east-2.rds.amazonaws.com','testEntity','mssql_01_admin','Th3Bomb!')
 	runSQL.open_conn()
@@ -454,29 +451,46 @@ def drop_all_indexes():
 	return True	
 	
 	
-def truncate_and_drop_tables():
+def truncate_and_drop_tables(ttyp = None):
 	do_all = ''
 	
 	for t in global_vars.table_objs.values():
-		if ('not_in_db' not in t.process_status) :
-			do_all = do_all + table_ddl('DROP',t) + '\n'
-		
-	runSQL = RunDDL_MSSQL('{SQL Server}','mssql-01.cq79i0ypklbj.us-east-2.rds.amazonaws.com','testEntity','mssql_01_admin','Th3Bomb!')
-	runSQL.open_conn()
-	runSQL.run_ddl(do_all)
-	runSQL.close_conn()	
+		if ('in_db' in t.process_status) :
+			 # if we are dropping DOMAIN tables do only domain tables else drop all others except domain tables
+			if (ttyp == 'DOMAIN') and (t.table_type == global_vars.table_keys['pdkey']) :
+				do_all = do_all + table_ddl('DROP',t) + '\n'
+			
+			if (ttyp != 'DOMAIN') and (t.table_type != global_vars.table_keys['pdkey']):
+				do_all = do_all + table_ddl('DROP',t) + '\n'
+						
+	if (len(do_all) > 0):
+		print ('in trunc/load do_all [{}]'.format(do_all))
+		runSQL = RunDDL_MSSQL('{SQL Server}','mssql-01.cq79i0ypklbj.us-east-2.rds.amazonaws.com','testEntity','mssql_01_admin','Th3Bomb!')
+		runSQL.open_conn()
+		runSQL.run_ddl(do_all)
+		runSQL.close_conn()	
 	
-
-def bcp_all_data():
+def	write_domain_data():
+	truncate_and_drop_tables('DOMAIN')
+	create_all_tables('DOMAIN')
+	write_tables_to_file('DOMAIN')
+	bcp_all_data('DOMAIN')
+		
+def bcp_a_table(tbl):		
 	delim_char = global_vars.delim_char
 	do_all = ''
+	do_bcp = 'bcp ' + tbl.table_name + ' in ' + tbl.table_name + '.csv -Smssql-01.cq79i0ypklbj.us-east-2.rds.amazonaws.com -Umssql_01_admin -PTh3Bomb! -dtestEntity -c -t"'+delim_char+'"'
+	os.system(do_bcp)
+
+def bcp_all_data(ttyp = None):
 	for t in global_vars.table_objs.values():
-		if ('not_in_db' not in t.process_status) :
-			do_bcp = 'bcp ' + t.table_name + ' in ' + t.table_name + '.csv -Smssql-01.cq79i0ypklbj.us-east-2.rds.amazonaws.com -Umssql_01_admin -PTh3Bomb! -dtestEntity -c -t"'+delim_char+'"'
-			os.system(do_bcp)
-			# 11/22/18 cglenn : cannot remmeber why this check is here....
-			if t.table_type == global_vars.table_keys['pdkey'] : 
-				t.process_status.append('loaded_to_database')				
+		if ('in_db' in t.process_status) :
+			if (ttyp == 'DOMAIN') and (t.table_type == global_vars.table_keys['pdkey']) :
+				bcp_a_table(t)
+			
+			if (ttyp != 'DOMAIN') and (t.table_type != global_vars.table_keys['pdkey']):
+				bcp_a_table(t)
+	
 	
 def load_domain_tables(jsparms):
 	dtbls = []
@@ -492,32 +506,44 @@ def load_domain_tables(jsparms):
 				
 			global_vars.table_objs[t].rows.append(cr)		
 			
-		#print("t [{}] rows [{}]".format(t,	global_vars.table_objs[t].rows))
+		#print("in load domain tables ...t [{}] rows [{}]".format(t,	global_vars.table_objs[t].rows))
 			
 def clear_all_table_rows():
 	for t in global_vars.table_objs.values():
 		if t.table_type != global_vars.table_keys['pdkey'] : t.clear_all_rows()
 		
-def write_tables_to_file():
+def write_a_file(tbl):
 	delim_char = global_vars.delim_char
-	
+	print('write a file. tbl [{}]  typ [{}]  process stat [{}]'.format(tbl.table_name, tbl.table_type, tbl.process_status))
+	#if ('loaded_to_database' not in tbl.process_status) and ('in_db' not in tbl.process_status):  
+	with open(tbl.table_name+'.csv', "w") as write_file:
+		for l in tbl.rows: 
+			s = ''.join(str(c)+delim_char for c in l)[:-1]
+			if (tbl.table_type == 'PDK') : print("in write a file ...t.name [{}] line [{}]".format(tbl.table_name,s))
+			write_file.write(s+'\n')	
+		
+		
+def write_tables_to_file(ttyp = None):
 	for t in global_vars.table_objs.values():
-			if ('loaded_to_database' not in t.process_status) or ('not_in_db' not in t.process_status):  
-				with open(t.table_name+'.csv', "w") as write_file:
-					for l in t.rows: 
-						s = ''.join(str(c)+delim_char for c in l)[:-1]
-						write_file.write(s+'\n')
-
+	# if we are processing DOMAIN tables do only domain tables else process all others except domain tables
+		if (ttyp == 'DOMAIN') and (t.table_type == global_vars.table_keys['pdkey']) :
+			write_a_file(t)
+			
+		if (ttyp != 'DOMAIN') and (t.table_type != global_vars.table_keys['pdkey']):
+			write_a_file(t)
+						
 					
 def populate_and_create_relationships():
 	
 	clear_all_table_rows()
 	max_loop = global_vars.global_id + global_vars.global_id_batch_size
+	#testTR = [['addressType_list','addressType'],['addressType_list','customer']]
+		
 	while global_vars.global_id < max_loop:
 		
 		clear_all_row_in_progress()
 		for relation_list in global_vars.table_relations:
-			 
+		#for relation_list in testTR:	 
 			ptbl = global_vars.table_objs[relation_list[0]]
 
 			populate_table(ptbl,None)
@@ -548,11 +574,11 @@ def populate_table(ptbl,tbl):
 	if ptbl.table_type == global_vars.table_keys['pdkey'] and tbl != None : 
 		dkey = str(md.random_from_list(ptbl.rows)[0])							# we assume the primary key is the first column in the row
 	
-	if ptbl.table_type == global_vars.table_keys['pkey'] :
-		pkColNames = ptbl.get_column_names_by_keytype(ptbl.table_type)
+	#if ptbl.table_type == global_vars.table_keys['pkey'] :
+	pkColNames = ptbl.get_column_names_by_keytype(pkey)
 
-	if ptbl.table_type == global_vars.table_keys['pdkey'] :
-		pdkColNames = ptbl.get_column_names_by_keytype(ptbl.table_type)
+	#if ptbl.table_type == global_vars.table_keys['pdkey'] :
+	pdkColNames = ptbl.get_column_names_by_keytype(pdkey)
 	
 		
 	if ptbl.table_type != global_vars.table_keys['pdkey'] and tbl == None : 
@@ -570,39 +596,50 @@ def populate_table(ptbl,tbl):
 	str_gid = str(global_vars.global_id)
 	
 
-	row = [None] * len(tbl.row_desc)
-	if tbl.row_in_process == True:
+	row = ['_$noColValue'] * len(tbl.row_desc)
+	
+	if tbl.is_row_in_progress() == True:
 		row = tbl.rows.pop()
 	
 	cidx = 0
 	for col in 	tbl.get_table_desc():
-		#print("....tbl col:   {}.....pdkColNames = {}".format(col,pdkColNames))
+ 
+		print("....tbl {}...pkColNames [{}]...pdkColNames [{}] row in progress[{}] ".format(tbl.table_name, pkColNames, pdkColNames, tbl.is_row_in_progress()))
+		print('....10 col[0]  :: {}  col[2] ::[{}] '.format(col[0], col[2] ))
+		print('....20 row :: {} '.format(row))
+		
 		if ((col[2] == fdkey) and (col[0] in pdkColNames)):
 			row[cidx] = dkey  
-			#print("....col[2] == fdkey & col[0] in pdkColNames .. col[2] [{}] row[{}]".format(col[2],row))
+			print("....30 col[2] == fdkey & col[0] in pdkColNames .. col[2] [{}] row[{}]\n".format(col[2],row))
 			
-		if 	tbl.row_in_process == False:
-			if col[2] in [ pkey,fkey ]:
-				row[cidx] = str_gid
-			
+		#if 	tbl.row_in_process == False:
+		#if 	tbl.is_row_in_progress() == False:
+		
+		if col[2] in [ pkey,fkey ]:
+			row[cidx] = str_gid
+			print("....40 col[2] [{}]  row [{}]\n\n".format(col[2],row))
+
 			#if col[2] == pdkey : row = row + dkey + delim_char
-			
-			if col[2] == u'None' :
-				#print ('.... 10 row :: {} '.format(row))
-				if col[1] == 'full_name' : row[cidx]=md.random_full_name()
-				if col[1] == 'dob'       : row[cidx]=md.random_date(1945,1985) 	 
-				if col[1] == 'dtetm'     : row[cidx]=md.random_date(1900,2020) 	 
-				if col[1] == 'address'   : row[cidx]=md.random_addr()			 	 
-				if col[1] == 'email'     : row[cidx]=str_gid + '@email.com' 	 	
-				if col[1] == 'phone'     : row[cidx]=md.random_phone()         	 
-				if col[1] == 'int'       : row[cidx]=str(md.random_int(1000,10000))
-				if col[1] == 'vstr20'    : row[cidx]=str('S2' * 10)		 	        
-				if col[1] == 'vstr80'    : row[cidx]=str('S8' * 40)		 	        
-				if col[1] == 'vstr128'   : row[cidx]=str('Se' * 64)		 	    
+		
+		if col[2] == u'None' :
+			#print ('....10 table [{}] row :: {} '.format(tbl.table_name,row))
+			if col[1] == 'full_name' : row[cidx]=md.random_full_name()
+			if col[1] == 'dob'       : row[cidx]=md.random_date(1945,1985) 	 
+			if col[1] == 'dtetm'     : row[cidx]=md.random_date(1900,2020) 	 
+			if col[1] == 'address'   : row[cidx]=md.random_addr()			 	 
+			if col[1] == 'email'     : row[cidx]='email.' + str_gid + '@email.com' 	 	
+			if col[1] == 'phone'     : row[cidx]=md.random_phone()         	 
+			if col[1] == 'int'       : row[cidx]=str(md.random_int(1000,10000))
+			if col[1] == 'amt'       : row[cidx]=str(md.random_amt(10,1000))
+			if col[1] == 'vstr20'    : row[cidx]=str('S2' * 10)		 	        
+			if col[1] == 'vstr80'    : row[cidx]=str('S8' * 40)		 	        
+			if col[1] == 'vstr128'   : row[cidx]=str('S128' * 32)		 	    
 		cidx = cidx + 1
 		
 	tbl.rows.append(row)			
-	tbl.row_in_process = True
+	#tbl.row_in_process = True
+	#print ('....99 table [{}] row :: {} '.format(tbl.table_name,row))
+	
 	
 def get_parms_missing(jsonParms):
 		r=[]
@@ -688,30 +725,23 @@ if __name__ == '__main__':
 	
 	#global_vars.table_relations.append([tl[1],tl[0]])
 	
-	
-	if global_vars.use_max_DB_ID : 
-		global_vars.global_id = get_last_id() + 1
-	
 	global_vars.all_to_stdout()	
 	
-	if (global_vars.write_to_DB and global_vars.truncate_and_load):
+	if (global_vars.write_to_DB):
+
+		if global_vars.use_max_DB_ID : 
+			global_vars.global_id = get_last_id() + 1
 		
-		table_status = check_tables()
-		
-		if (table_status[0] != 'NONE_EXIST') and (table_status[0] != 'ALL_EXIST') :
-			print('these tables are missing ....{}'.format(str(table_status)))
-			for t in table_status :
-				global_vars.table_objs[t].process_status.append('not_in_db')
+		set_all_table_status()
+		write_domain_data()
 		
 		if (global_vars.truncate_and_load): 
 			truncate_and_drop_tables()
 			create_all_tables()
 		
-		if (table_status[0] == 'ALL_EXIST' and not(global_vars.truncate_and_load)): 
+		if not(global_vars.truncate_and_load): 
 			drop_all_indexes()
-			
-		if (table_status[0] == 'NONE_EXIST'):
-			create_all_tables()
+	
 		
 	while global_vars.curr_batch_number < global_vars.num_of_batches:
 		populate_and_create_relationships()
