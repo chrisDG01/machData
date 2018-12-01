@@ -159,7 +159,7 @@ class DatabaseTable():
 	def get_column_names_by_keytype(self, keyType):
 		cn = []		
 		for col_name in self.row_desc.keys():
-			print('row desc [{}] search key [{}]'.format(self.row_desc[col_name][2], keyType))
+			#print('row desc [{}] search key [{}]'.format(self.row_desc[col_name][2], keyType))
 			if self.row_desc[col_name][2] == keyType :
 				cn.append(col_name)
 		return cn
@@ -464,7 +464,7 @@ def truncate_and_drop_tables(ttyp = None):
 				do_all = do_all + table_ddl('DROP',t) + '\n'
 						
 	if (len(do_all) > 0):
-		print ('in trunc/load do_all [{}]'.format(do_all))
+		#print ('in trunc/load do_all [{}]'.format(do_all))
 		runSQL = RunDDL_MSSQL('{SQL Server}','mssql-01.cq79i0ypklbj.us-east-2.rds.amazonaws.com','testEntity','mssql_01_admin','Th3Bomb!')
 		runSQL.open_conn()
 		runSQL.run_ddl(do_all)
@@ -514,12 +514,12 @@ def clear_all_table_rows():
 		
 def write_a_file(tbl):
 	delim_char = global_vars.delim_char
-	print('write a file. tbl [{}]  typ [{}]  process stat [{}]'.format(tbl.table_name, tbl.table_type, tbl.process_status))
-	#if ('loaded_to_database' not in tbl.process_status) and ('in_db' not in tbl.process_status):  
+	#print('write a file. tbl [{}]  typ [{}]  process stat [{}]'.format(tbl.table_name, tbl.table_type, tbl.process_status))
+	
 	with open(tbl.table_name+'.csv', "w") as write_file:
 		for l in tbl.rows: 
 			s = ''.join(str(c)+delim_char for c in l)[:-1]
-			if (tbl.table_type == 'PDK') : print("in write a file ...t.name [{}] line [{}]".format(tbl.table_name,s))
+			#if (tbl.table_type == 'PDK') : print("in write a file ...t.name [{}] line [{}]".format(tbl.table_name,s))
 			write_file.write(s+'\n')	
 		
 		
@@ -533,113 +533,65 @@ def write_tables_to_file(ttyp = None):
 			write_a_file(t)
 						
 					
-def populate_and_create_relationships():
+def create_a_batch_of_all_tables():
 	
 	clear_all_table_rows()
-	max_loop = global_vars.global_id + global_vars.global_id_batch_size
-	#testTR = [['addressType_list','addressType'],['addressType_list','customer']]
-		
-	while global_vars.global_id < max_loop:
-		
-		clear_all_row_in_progress()
-		for relation_list in global_vars.table_relations:
-		#for relation_list in testTR:	 
-			ptbl = global_vars.table_objs[relation_list[0]]
-
-			populate_table(ptbl,None)
-				
-			for tn in relation_list[1:]:
-				if str(tn) != '':
-					populate_table(ptbl,global_vars.table_objs[str(tn)])	
-		
-		global_vars.incr_global_id()
-			
-	print ('\nnumber of rows per batch {} \n\n'.format(global_vars.global_id_batch_size))
-		
-		
-def populate_table(ptbl,tbl):
-	    
+	
 	pkey  = global_vars.table_keys['pkey']
 	pdkey = global_vars.table_keys['pdkey']
 	fkey  = global_vars.table_keys['fkey']
 	fdkey = global_vars.table_keys['fdkey']
 	
-	pkColNames  = ''
-	pdkColNames = ''
-	
-	if ptbl.table_type == global_vars.table_keys['pdkey'] and tbl == None : 
-		return
+	max_loop = global_vars.global_id + global_vars.global_id_batch_size
 		
-	dkey = ''
-	if ptbl.table_type == global_vars.table_keys['pdkey'] and tbl != None : 
-		dkey = str(md.random_from_list(ptbl.rows)[0])							# we assume the primary key is the first column in the row
-	
-	#if ptbl.table_type == global_vars.table_keys['pkey'] :
-	pkColNames = ptbl.get_column_names_by_keytype(pkey)
-
-	#if ptbl.table_type == global_vars.table_keys['pdkey'] :
-	pdkColNames = ptbl.get_column_names_by_keytype(pdkey)
-	
+	while global_vars.global_id < max_loop:
+		primaryColNames = {}
 		
-	if ptbl.table_type != global_vars.table_keys['pdkey'] and tbl == None : 
-		tbl = ptbl
+		#
+		# find and assign primary key values for all domain and parent tables keep in primaryColNames
+		#
+		for tbl in global_vars.table_objs.values():
+			if tbl.table_type == pkey :
+				primaryColNames[str(tbl.get_column_names_by_keytype(pkey)[0])] = str(global_vars.global_id)
 
-	# nov 12, 2018 cglenn
-	# if parent and child are being processed and the parent is pkey or pdkey then  : if (colnames are equal) and ptbl is pkey and tbl is fkey 
-	# then link them ( tbl.fkey gets the str_gid
-
-	#print("ptbl: table_name = {}.....table_type = {}".format(ptbl.table_name,ptbl.table_type))
-	#print("tbl:  table_name = {}.....table_type = {}".format(tbl.table_name,tbl.table_type))
-
-	
-	delim_char = global_vars.delim_char
-	str_gid = str(global_vars.global_id)
-	
-
-	row = ['_$noColValue'] * len(tbl.row_desc)
-	
-	if tbl.is_row_in_progress() == True:
-		row = tbl.rows.pop()
-	
-	cidx = 0
-	for col in 	tbl.get_table_desc():
- 
-		print("....tbl {}...pkColNames [{}]...pdkColNames [{}] row in progress[{}] ".format(tbl.table_name, pkColNames, pdkColNames, tbl.is_row_in_progress()))
-		print('....10 col[0]  :: {}  col[2] ::[{}] '.format(col[0], col[2] ))
-		print('....20 row :: {} '.format(row))
+			if tbl.table_type == pdkey:
+				primaryColNames[str(tbl.get_column_names_by_keytype(pdkey)[0])] = str(md.random_from_list(tbl.rows)[0])		
+				
+		#print_and_split(	primaryColNames.items() )	
+		#
+		# now create data for each row in all tables except domain tables
+		#
+		for tbl in global_vars.table_objs.values():
+			if tbl.table_type != pdkey :
+				cidx = 0
+				row = ['_$noColValue'] * len(tbl.row_desc)
+				
+				for col in 	tbl.get_table_desc():		
+					if col[2] in [pkey, fkey, fdkey]:
+						row[cidx] = primaryColNames[col[0]]
+						
+					if col[2] == u'None' :
+						#print ('....10 table [{}] row :: {} '.format(tbl.table_name,row))
+						if col[1] == 'full_name' : row[cidx]=md.random_full_name()
+						if col[1] == 'dob'       : row[cidx]=md.random_date(1945,1985) 	 
+						if col[1] == 'dtetm'     : row[cidx]=md.random_date(1900,2020) 	 
+						if col[1] == 'address'   : row[cidx]=md.random_addr()			 	 
+						if col[1] == 'email'     : row[cidx]='email.' + str_gid + '@email.com' 	 	
+						if col[1] == 'phone'     : row[cidx]=md.random_phone()         	 
+						if col[1] == 'int'       : row[cidx]=str(md.random_int(1000,10000))
+						if col[1] == 'amt'       : row[cidx]=str(md.random_amt(10,1000))
+						if col[1] == 'vstr20'    : row[cidx]=str('S2' * 10)		 	        
+						if col[1] == 'vstr80'    : row[cidx]=str('S8' * 40)		 	        
+						if col[1] == 'vstr128'   : row[cidx]=str('S128' * 32)		 	    
+					cidx = cidx + 1	
+				tbl.rows.append(row)
+				
+		global_vars.incr_global_id()
+		#print(	global_vars.global_id )
+	print ('\nnumber of rows per batch {} \n\n'.format(global_vars.global_id_batch_size))
 		
-		if ((col[2] == fdkey) and (col[0] in pdkColNames)):
-			row[cidx] = dkey  
-			print("....30 col[2] == fdkey & col[0] in pdkColNames .. col[2] [{}] row[{}]\n".format(col[2],row))
-			
-		#if 	tbl.row_in_process == False:
-		#if 	tbl.is_row_in_progress() == False:
 		
-		if col[2] in [ pkey,fkey ]:
-			row[cidx] = str_gid
-			print("....40 col[2] [{}]  row [{}]\n\n".format(col[2],row))
 
-			#if col[2] == pdkey : row = row + dkey + delim_char
-		
-		if col[2] == u'None' :
-			#print ('....10 table [{}] row :: {} '.format(tbl.table_name,row))
-			if col[1] == 'full_name' : row[cidx]=md.random_full_name()
-			if col[1] == 'dob'       : row[cidx]=md.random_date(1945,1985) 	 
-			if col[1] == 'dtetm'     : row[cidx]=md.random_date(1900,2020) 	 
-			if col[1] == 'address'   : row[cidx]=md.random_addr()			 	 
-			if col[1] == 'email'     : row[cidx]='email.' + str_gid + '@email.com' 	 	
-			if col[1] == 'phone'     : row[cidx]=md.random_phone()         	 
-			if col[1] == 'int'       : row[cidx]=str(md.random_int(1000,10000))
-			if col[1] == 'amt'       : row[cidx]=str(md.random_amt(10,1000))
-			if col[1] == 'vstr20'    : row[cidx]=str('S2' * 10)		 	        
-			if col[1] == 'vstr80'    : row[cidx]=str('S8' * 40)		 	        
-			if col[1] == 'vstr128'   : row[cidx]=str('S128' * 32)		 	    
-		cidx = cidx + 1
-		
-	tbl.rows.append(row)			
-	#tbl.row_in_process = True
-	#print ('....99 table [{}] row :: {} '.format(tbl.table_name,row))
-	
 	
 def get_parms_missing(jsonParms):
 		r=[]
@@ -733,8 +685,7 @@ if __name__ == '__main__':
 			global_vars.global_id = get_last_id() + 1
 		
 		set_all_table_status()
-		write_domain_data()
-		
+				
 		if (global_vars.truncate_and_load): 
 			truncate_and_drop_tables()
 			create_all_tables()
@@ -742,9 +693,14 @@ if __name__ == '__main__':
 		if not(global_vars.truncate_and_load): 
 			drop_all_indexes()
 	
-		
+		write_domain_data()
+	else:
+		write_tables_to_file('DOMAIN')
+	
 	while global_vars.curr_batch_number < global_vars.num_of_batches:
-		populate_and_create_relationships()
+	
+		create_a_batch_of_all_tables()
+	
 		write_tables_to_file()
 				
 		if (global_vars.write_to_DB) : 
