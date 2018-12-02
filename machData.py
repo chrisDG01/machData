@@ -72,8 +72,16 @@ class GlobalVars():
 		self.table_keys				= jsonParms['g_keyTable']
 		self.table_objs				= create_table_objs(self,jsonParms)
 		self.table_relations		= format_table_relations(self,jsonParms['g_relationList'])
+		self.start_time				= datetime.datetime.now()
+		self.curr_time				= datetime.datetime.now()
+			
+	def update_curr_time(self):
+		self.curr_time = datetime.datetime.now()
 		
-	
+	def get_time_elapsed(self):
+		self.update_curr_time()
+		return self.curr_time - self.start_time 
+		
 	def incr_global_id(self):
 		self.global_id = self.global_id + 1
 		
@@ -82,14 +90,17 @@ class GlobalVars():
 				
 	def all_to_stdout(self):
 		print('==================================================================\n')
-		print('self.use_max_DB_ID 			: {}\n'.format(self.use_max_DB_ID ))		     
-		print('self.global_id_batch_size	: {}\n'.format(self.global_id_batch_size )) 	  
-		print('self.global_id				: {}\n'.format(self.global_id ))      	 
-		print('self.num_of_batches			: {}\n'.format(self.num_of_batches )) 		 
-		print('self.curr_batch_number  		: {}\n'.format(self.curr_batch_number ))    
-		print('self.delim_char   			: {}\n'.format(self.delim_char ))         
-		print('self.truncate_and_load 		: {}\n'.format(self.truncate_and_load ))	
-		print('self.write_to_DB 			: {}\n'.format(self.write_to_DB ))	
+		print('start time				: {}\n'.format(self.start_time))
+		print('curr time				: {}\n'.format(self.curr_time))
+		print('elapsed time				: {}\n'.format(self.get_time_elapsed()))
+		print('use_max_DB_ID 			: {}\n'.format(self.use_max_DB_ID ))		     
+		print('global_id_batch_size	: {}\n'.format(self.global_id_batch_size )) 	  
+		print('global_id				: {}\n'.format(self.global_id ))      	 
+		print('num_of_batches			: {}\n'.format(self.num_of_batches )) 		 
+		print('curr_batch_number  		: {}\n'.format(self.curr_batch_number ))    
+		print('delim_char   			: {}\n'.format(self.delim_char ))         
+		print('truncate_and_load 		: {}\n'.format(self.truncate_and_load ))	
+		print('write_to_DB 			: {}\n'.format(self.write_to_DB ))	
 		print('==================================================================\n')
 		
 		
@@ -292,10 +303,12 @@ class RunDDL_MSSQL:
 		return result
     
 	def run_ddl(self, ddl):
-		cur = self.mssql_conn.cursor()
-		cur.execute(ddl)
-		cur.commit()
-		cur.close			  
+		#print('in run_ddl [{}]'.format(ddl))
+		if (len(ddl)>0):
+			cur = self.mssql_conn.cursor()
+			cur.execute(ddl)
+			cur.commit()
+			cur.close			  
 	
 	def check_if_object_exists(self, t):
 		if not(self.mssql_conn) : self.open_conn()
@@ -355,12 +368,12 @@ def table_ddl(ddl_type,tbl):
 	#print('in table_ddl ddl [{}]\n'.format(ddl))
 	
 	if ddl_type == 'CREATE':
-		retstr = 'create table ' + table_name + ' ('
+		retstr = 'create table [' + table_name + '] ('
 		
 		for col in ddl:
 			cn  = col[0]
 			cdt = col[1]
-			retstr = retstr + cn + ' ' + cdt + ','
+			retstr = retstr + '[' + cn + ']' + ' ' + cdt + ','
 		return retstr[:-1] + ')'
 		
 	if ddl_type == 'DROP':
@@ -414,6 +427,7 @@ def create_all_tables(ttyp = None):
 	#print_and_split(do_all)			
 	runSQL = RunDDL_MSSQL('{SQL Server}','mssql-01.cq79i0ypklbj.us-east-2.rds.amazonaws.com','testEntity','mssql_01_admin','Th3Bomb!')
 	runSQL.open_conn()
+	#print ('create table [{}]'.format(do_all))
 	runSQL.run_ddl(do_all)
 	runSQL.close_conn()	
 	return True	
@@ -433,10 +447,8 @@ def create_all_indexes():
 		
 	
 def drop_all_indexes():
-	index_status = check_indexes()
-	
-	if index_status[0] == 'NONE_EXIST' : 
-		return True
+	check_indexes()	
+
 
 	do_all = ''
 	for t in global_vars.table_objs.values():
@@ -476,10 +488,12 @@ def	write_domain_data():
 	write_tables_to_file('DOMAIN')
 	bcp_all_data('DOMAIN')
 		
-def bcp_a_table(tbl):		
+def bcp_a_table(tbl):
+	print ('bcp :: table name [{}]'.format(tbl.table_name))
 	delim_char = global_vars.delim_char
 	do_all = ''
 	do_bcp = 'bcp ' + tbl.table_name + ' in ' + tbl.table_name + '.csv -Smssql-01.cq79i0ypklbj.us-east-2.rds.amazonaws.com -Umssql_01_admin -PTh3Bomb! -dtestEntity -c -t"'+delim_char+'"'
+	#print (do_bcp)
 	os.system(do_bcp)
 
 def bcp_all_data(ttyp = None):
@@ -518,7 +532,7 @@ def write_a_file(tbl):
 	
 	with open(tbl.table_name+'.csv', "w") as write_file:
 		for l in tbl.rows: 
-			s = ''.join(str(c)+delim_char for c in l)[:-1]
+			s = ''.join(str(c) + delim_char for c in l)[:-1]
 			#if (tbl.table_type == 'PDK') : print("in write a file ...t.name [{}] line [{}]".format(tbl.table_name,s))
 			write_file.write(s+'\n')	
 		

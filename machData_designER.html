@@ -156,6 +156,12 @@
 } // doShowTable 	
 
 
+  function doClearTableDesc() {
+	document.getElementById('div_table').innerHTML = ''
+	document.getElementById('txt_tableTitle').value = ''
+  
+  } // doClearTableDesc
+
   function doAddTable() {
     var tableName = document.getElementById('txt_tableTitle').value;
 		
@@ -169,9 +175,25 @@
    Object.assign(g_tableList,jsTbl);
    
    doShowControl();
-
+   doClearTableDesc()
   } // doAddTable
 
+  
+  function doDelTable() {
+    var tableName = document.getElementById('txt_tableTitle').value;
+		
+	if (tableName == 'New-Table-Name') {
+		alert('Cannot delete - please select a table...');
+		return
+	}
+	
+		
+    delete g_tableList[tableName]
+   
+    doShowControl();
+    doClearTableDesc()
+  } // doDelTable
+  
 
 
   function doAddDescRow() {
@@ -558,6 +580,9 @@
 		 </td>
 		 <td>
 		   <input type='button' id='btn_addTable' class='fullSpace' value='Add Table' onclick="doAddTable()">
+		 </td>
+		 <td>
+		   <input type='button' id='btn_delTable' class='fullSpace' value='Del Table' onclick="doDelTable()">
 		 </td>
 		</tr>
     </table> 
