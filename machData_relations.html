@@ -114,6 +114,7 @@
  } // doGetKeyTypes
  
  
+ 
  function doCreateParentObj(tname) {
 	var tbl = g_tableList[tname]
     var shw = ''
@@ -173,38 +174,86 @@
 		for (var i =0; i< g_relationList[ptname].length; i++) {
           var ctname = g_relationList[ptname][i]
 		  if (ptname != null && ctname != null ) { 
-	console.log(ctname)	  
+	//console.log(ctname)	  
 		  
 		  doAddChildToParent(ptname, ctname) }
 
-/* 		  var id     = 'tbl_parent_' + ptname
-			var ctname = g_relationList[ptname][i]
-			var ptbl   = document.getElementById(id);
-			var pKey   = ptbl.rows[1].cells[1].innerHTML;
-			
-			if (pKey == 'PK')  { var fKey = 'FK' }
-			if (pKey == 'PDK') { var fKey = 'FDK' }
-			
-		    var row  = ptbl.insertRow(-1);
-			row.ondblclick = (function() {doDeleteChild(ptname,ctname)});
-			var padCell  = row.insertCell(0);
-			var ctnCell  = row.insertCell(1);
-			var cColName = row.insertCell(2);
-			var cKeyType = row.insertCell(3);
-	
-	
-			padCell.innerHTML = "o";
-			ctnCell.innerHTML = ctname
-			cColName.innerHTML = 'colName'
-			cKeyType.innerHTML = 'key'
-		
-*/			
 		} // ctname
 	
 	} // for ptname
  	
 } // 	doAddChildTables
 
+
+function checkForRI() {
+// find all pk and pdk column names per table - put these in parent table
+// find all fk and fdk column names per table - add these to matching parent table  
+// if a table is not in either table error : that table has no relation
+// if a parent table has only the parent table error : that table has no relation
+
+	var c = 0
+	var i = 0
+	var j = 0
+	var ptbl = ''
+	var ftbl = ''
+	var tname  = ''
+	var colName = ''
+	var pList  = {}
+	var fList  = {}
+    var riList = {}
+	var err_pList = []
+	var err_fList = []
+	var tList  = Object.keys(g_tableList)
+	
+	for ( i=0; i<tList.length; i++) { 
+	  tname = tList[i]
+	  
+	  c = doGetColNum(tname,'PK') 
+	  if ( c != null ) { if (( tname in pList) == false ) {pList[tname] = g_tableList[tname][c] } else {pList[tname].push(g_tableList[tname][c])}}
+	
+      c = doGetColNum(tname,'PDK') 
+	  if ( c != null ) { if (( tname in pList) == false ) {pList[tname] = g_tableList[tname][c] } else {pList[tname].push(g_tableList[tname][c])}}
+	
+      c = doGetColNum(tname,'FK') 
+	  if ( c != null ) { if (( tname in fList) == false ) {fList[tname] = g_tableList[tname][c] } else {fList[tname].push(g_tableList[tname][c])}}
+
+      c = doGetColNum(tname,'FDK') 
+	  if ( c != null ) { if (( tname in fList) == false ) {fList[tname] = g_tableList[tname][c] } else {fList[tname].push(g_tableList[tname][c])}}
+	
+	} // for 
+
+
+	
+	for ( ptbl in pList) { 
+	     
+	    colName = pList[ptbl][0]
+
+		for ( ftbl in fList ) {
+			if ( colName == fList[ftbl][0] ) {
+				if ((ptbl in riList) == false) {					
+					riList[ptbl] = [ftbl]
+				}
+				else
+				{
+				    riList[ptbl].push(ftbl)
+			    }
+			
+		   } // if colName
+		
+	    } // for ptbl
+	 
+	}
+	
+	alert('riList key : ' + Object.keys(riList) )
+	alert('riList val : ' + Object.values(riList) )
+ 
+    for ( ptbl in pList) {
+		if ( (ptbl in riList) == false ) { err_pList.push(ptbl) }
+	} // for
+	alert('parent tables w/out children : ' + err_pList )
+	
+} // checkForRI 
+ 
  
  
  function doPopulateAllDisplays() {
@@ -229,6 +278,8 @@
 
 	} // for
 
+	checkForRI(pList, cList)
+	
 	doPopulateChildDisplay(cList)
 	doPopulateParentDisplay(pList)
 	doAddChildTables()

@@ -437,7 +437,7 @@ def create_all_indexes():
 	do_all = ''
 	for t in global_vars.table_objs.values():
 		idx = t.get_index_name_and_col()
-		do_all = do_all + 'CREATE INDEX ' + idx['name'] + ' on (' + idx['col'] + ');\n'
+		do_all = do_all + 'CREATE INDEX ' + idx['name'] + ' on ' + t.table_name + ' (' + idx['col'] + ');\n'
 		
 	runSQL = RunDDL_MSSQL('{SQL Server}','mssql-01.cq79i0ypklbj.us-east-2.rds.amazonaws.com','testEntity','mssql_01_admin','Th3Bomb!')
 	runSQL.open_conn()
@@ -511,7 +511,7 @@ def load_domain_tables(jsparms):
 	for t in jsparms['g_tableList'].keys():
 		if 'PDK' in ''.join(str(e) for e in jsparms['g_tableList'][t]): 
 			dtbls.append(t)
-		
+	#print_and_split(dtbls)	
 	for t in dtbls:
 		for r in jsparms['g_domainData'][t]:
 			cr = []
@@ -587,10 +587,10 @@ def create_a_batch_of_all_tables():
 					if col[2] == u'None' :
 						#print ('....10 table [{}] row :: {} '.format(tbl.table_name,row))
 						if col[1] == 'full_name' : row[cidx]=md.random_full_name()
-						if col[1] == 'dob'       : row[cidx]=md.random_date(1945,1985) 	 
-						if col[1] == 'dtetm'     : row[cidx]=md.random_date(1900,2020) 	 
+						if col[1] == 'dob'       : row[cidx]=md.random_date(1958,1985) 	 
+						if col[1] == 'dtetm'     : row[cidx]=md.random_date(2000,2018) 	 
 						if col[1] == 'address'   : row[cidx]=md.random_addr()			 	 
-						if col[1] == 'email'     : row[cidx]='email.' + str_gid + '@email.com' 	 	
+						if col[1] == 'email'     : row[cidx]='email.' + str(global_vars.global_id) + '@email.com' 	 	
 						if col[1] == 'phone'     : row[cidx]=md.random_phone()         	 
 						if col[1] == 'int'       : row[cidx]=str(md.random_int(1000,10000))
 						if col[1] == 'amt'       : row[cidx]=str(md.random_amt(10,1000))
@@ -723,6 +723,12 @@ if __name__ == '__main__':
 		global_vars.incr_batch_count()
 		global_vars.all_to_stdout()
 		
+		
+	if (global_vars.write_to_DB and global_vars.truncate_and_load):
+		print("creating indexes....")
+		create_all_indexes()	
+		global_vars.all_to_stdout()	
+	
 	print('\n\nrun completed....')
 	
 		
