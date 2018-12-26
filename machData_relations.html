@@ -185,6 +185,15 @@
 } // 	doAddChildTables
 
 
+function getTableKeyCol(tbl) {
+
+var keyCol = g_tableList[tbl][0]
+
+return tbl + '.' + keyCol[0] + '(' + keyCol[2] + ')'
+
+
+} // getTableKeyCol
+
 function checkForRI() {
 // find all pk and pdk column names per table - put these in parent table
 // find all fk and fdk column names per table - add these to matching parent table  
@@ -198,6 +207,7 @@ function checkForRI() {
 	var ftbl = ''
 	var tname  = ''
 	var colName = ''
+	var shw = ''
 	var pList  = {}
 	var fList  = {}
     var riList = {}
@@ -222,7 +232,6 @@ function checkForRI() {
 	
 	} // for 
 
-
 	
 	for ( ptbl in pList) { 
 	     
@@ -244,13 +253,74 @@ function checkForRI() {
 	 
 	}
 	
-	alert('riList key : ' + Object.keys(riList) )
-	alert('riList val : ' + Object.values(riList) )
+	//alert('riList key : ' + Object.keys(riList) )
+	//alert('riList val : ' + Object.values(riList) )
  
     for ( ptbl in pList) {
 		if ( (ptbl in riList) == false ) { err_pList.push(ptbl) }
 	} // for
-	alert('parent tables w/out children : ' + err_pList )
+	//alert('parent tables w/out children : ' + err_pList )
+	//alert('another look : '+ err_pList[0] + ' - ' + g_tableList[err_pList[0]][0] )
+	
+	
+	//
+	// list all the tales 
+	//
+    shw = "<b>All TABLES:</b><table border=1 id='childTables'>";	
+	shw = shw + "<tr>"
+    
+	for ( i=0; i<tList.length; i++) { 
+        shw = shw + "<td>" + tList[i] + "</td>"
+				//shw = shw + '<br>'
+	}
+	shw = shw + '</table><br>'
+	document.getElementById('div_parentList').innerHTML = shw ;
+
+	//
+	//list the primary key tables and the foriegn key tables here ( pList andf fList ) 
+	//
+	shw = "<b>Primary TABLES:</b><table border=1 id='childTables'>";	
+	shw = shw + "<tr>"
+    for ( ptbl in pList){ 
+        shw = shw + "<td>" + ptbl + "</td>"
+	}
+	shw = shw + '</table><br>'
+	document.getElementById('div_parentList').innerHTML = document.getElementById('div_parentList').innerHTML + shw ;
+	
+	shw = "<b>Foreign TABLES:</b><table border=1 id='childTables'>";	
+	shw = shw + "<tr>"
+    for ( ftbl in fList){ 
+        shw = shw + "<td>" + ftbl + "</td>"
+	}
+	shw = shw + '</table><br>'
+	document.getElementById('div_parentList').innerHTML = document.getElementById('div_parentList').innerHTML + shw ;
+	
+	
+	// then the tables with no relations
+	//
+	// then the ones with relations
+    shw = ''
+	for (ptbl in riList) {
+	    shw = shw + "<table border=1 id='childTables'>";
+	    shw = shw + "<tr>"
+		shw = shw + "<td><b>" + ptbl + "</b></td>"
+		//shw = shw + "</tr>"
+		for (i=0; i < riList[ptbl].length; i++) {
+			//shw = shw + "<tr>"
+			shw = shw + "<td>" + riList[ptbl][i] + "</td>"
+			//shw = shw + "</tr>"
+		
+		} // for i
+		shw = shw + "</tr>"
+	    shw = shw + '</table>'
+		//shw = shw + '<br>'
+	}
+	
+	
+	document.getElementById('div_parentList').innerHTML = document.getElementById('div_parentList').innerHTML + shw ;
+
+	
+	
 	
 } // checkForRI 
  
@@ -280,9 +350,9 @@ function checkForRI() {
 
 	checkForRI(pList, cList)
 	
-	doPopulateChildDisplay(cList)
-	doPopulateParentDisplay(pList)
-	doAddChildTables()
+	//doPopulateChildDisplay(cList)
+	//doPopulateParentDisplay(pList)
+	//doAddChildTables()
 		
  } // doPopulateAllDisplays
  
@@ -538,18 +608,18 @@ function doParameters() {
 	}
 	div.parentList{
    		width:  1000px;
-		height: 300px;
+		height: 500px;
 		margin: auto;
 		border: 3px solid #73AD21;
-		position: absolute; left: 50px; top: 275px; 
+		position: absolute; left: 50px; top: 75px; 
 	}
 			
 	div.menu {
    		width:  1000px;
-		height: 100px;
+		height: 50px;
 		margin: auto;
 		border: 3px solid #73AD21;
-		position: absolute; left: 50px; top: 575px; 
+		position: absolute; left: 50px; top: 590px; 
 	}
 	
 	div.parentObj {
@@ -612,7 +682,9 @@ function doParameters() {
 
 <br>
 
+<!-- 
 <div id='div_childList' class='childList'></div>
+-->
 
 <div id='div_parentList' class='parentList' >
 
