@@ -1,3 +1,9 @@
+<<<<<<< Updated upstream
+=======
+#
+# git branch 2.50
+# 
+>>>>>>> Stashed changes
 
 import json
 import os
