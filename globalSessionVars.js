@@ -7,9 +7,7 @@ var g_parameters    = {}
 var g_domainTable   = {}	
 var g_keyTable      = {}    
 var g_domainData	= {}
-var g_numOfdomainTable = 11 	
-					
-
+var g_numOfdomainTable = 0 	
 
 
 function distributeGlobalVars() {	
@@ -36,7 +34,8 @@ function distributeGlobalVars() {
 				g_domainTable.address 	= 'varchar(128)'
 				g_domainTable.full_name = 'varchar(128)'
 				g_domainTable.dob 		= 'datetime'
-				g_domainTable.amt 		= 'numeric(10,2)'
+				g_domainTable.amt500	= 'numeric(10,2)'
+				g_domainTable.amt1000	= 'numeric(10,2)'				
 			} // else g_domain
 		}
 		

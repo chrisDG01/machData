@@ -71,7 +71,7 @@ class GlobalVars():
 		self.write_to_DB 			= True	if (jsonParms['g_parameters']['write_to_DB']    	  == u'True')	else False
 		self.table_keys				= jsonParms['g_keyTable']
 		self.table_objs				= create_table_objs(self,jsonParms)
-		self.table_relations		= format_table_relations(self,jsonParms['g_relationList'])
+		#self.table_relations		= format_table_relations(self,jsonParms['g_relationList'])
 		self.start_time				= datetime.datetime.now()
 		self.curr_time				= datetime.datetime.now()
 			
@@ -137,8 +137,7 @@ class DatabaseTable():
 			col_dtype    = self.get_datatype_ddl(col_name)
 			col_ord      = self.row_desc[col_name][1]
 			if ddl[col_ord] == None : ddl[col_ord] = [col_name,col_dtype]
-		
-			
+					
 		return ddl	
 	
 	def get_table_desc(self):
@@ -217,10 +216,10 @@ class MockData:
 
 		self.city_list   = [['Arch City', 'Abel Town'],
 							['Big Bend','Brandy Town','Berkeley'],
-							['Foster City'],
+							['Foster City','Farnsworth','Funky Towne'],
 							['Oakland'],
 							['Richmond'],
-							['San Francisco']]
+							['San Francisco','San Diego','Santa Rosa']]
 
 	def random_int(self, s,e):
 		return random.randint(s,e)
@@ -353,7 +352,6 @@ def get_last_id():
 	last_ID = runSQL.run_sql(sql)
 	runSQL.close_conn()
 	return int(last_ID[0][0])
-
 	
 
 def clear_all_row_in_progress() :
@@ -437,7 +435,8 @@ def create_all_indexes():
 	do_all = ''
 	for t in global_vars.table_objs.values():
 		idx = t.get_index_name_and_col()
-		do_all = do_all + 'CREATE INDEX ' + idx['name'] + ' on ' + t.table_name + ' (' + idx['col'] + ');\n'
+		if (idx) :
+			do_all = do_all + 'CREATE INDEX ' + idx['name'] + ' on ' + t.table_name + ' (' + idx['col'] + ');\n'
 		
 	runSQL = RunDDL_MSSQL('{SQL Server}','mssql-01.cq79i0ypklbj.us-east-2.rds.amazonaws.com','testEntity','mssql_01_admin','Th3Bomb!')
 	runSQL.open_conn()
@@ -564,44 +563,57 @@ def create_a_batch_of_all_tables():
 		#
 		# find and assign primary key values for all domain and parent tables keep in primaryColNames
 		#
+				
+		
 		for tbl in global_vars.table_objs.values():
 			if tbl.table_type == pkey :
 				primaryColNames[str(tbl.get_column_names_by_keytype(pkey)[0])] = str(global_vars.global_id)
-
+		
 			if tbl.table_type == pdkey:
 				primaryColNames[str(tbl.get_column_names_by_keytype(pdkey)[0])] = str(md.random_from_list(tbl.rows)[0])		
-				
-		#print_and_split(	primaryColNames.items() )	
+			
+			# if this table is a child table in a one to many relationship get a list if parent ids to create multiple child rows with
+			if (one_2_many): 
+				many_domain_keys = {'colName1':['1000','1001','1002'],'colName2':['2001','2003']}
 		#
 		# now create data for each row in all tables except domain tables
 		#
 		for tbl in global_vars.table_objs.values():
+			print('tbl name [{}] primary col names [{}]\n==========================\n'.format(tbl.table_name,primaryColNames.items() ))	
 			if tbl.table_type != pdkey :
-				cidx = 0
-				row = ['_$noColValue'] * len(tbl.row_desc)
+				end_doItAgain = 0
+				doItAgain     = 1
 				
-				for col in 	tbl.get_table_desc():		
-					if col[2] in [pkey, fkey, fdkey]:
-						row[cidx] = primaryColNames[col[0]]
-						
-					if col[2] == u'None' :
-						#print ('....10 table [{}] row :: {} '.format(tbl.table_name,row))
-						if col[1] == 'full_name' : row[cidx]=md.random_full_name()
-						if col[1] == 'dob'       : row[cidx]=md.random_date(1958,1985) 	 
-						if col[1] == 'dtetm'     : row[cidx]=md.random_date(2000,2018) 	 
-						if col[1] == 'address'   : row[cidx]=md.random_addr()			 	 
-						if col[1] == 'email'     : row[cidx]='email.' + str(global_vars.global_id) + '@email.com' 	 	
-						if col[1] == 'phone'     : row[cidx]=md.random_phone()         	 
-						if col[1] == 'int'       : row[cidx]=str(md.random_int(1000,10000))
-						if col[1] == 'amt'       : row[cidx]=str(md.random_amt(10,1000))
-						if col[1] == 'vstr20'    : row[cidx]=str('S2' * 10)		 	        
-						if col[1] == 'vstr80'    : row[cidx]=str('S8' * 40)		 	        
-						if col[1] == 'vstr128'   : row[cidx]=str('S128' * 32)		 	    
-					cidx = cidx + 1	
-				tbl.rows.append(row)
-				
+				#if (tbl.table_name in ['track_data','album_tracks']): doItAgain = 2
+					
+				while (doItAgain > end_doItAgain):
+					cidx = 0
+					row = ['_$noColValue'] * len(tbl.row_desc)
+					
+					for col in 	tbl.get_table_desc():		
+						if col[2] in [pkey, fkey, fdkey]:
+							row[cidx] = primaryColNames[col[0]]
+							
+						if col[2] == u'None' :
+							#print ('....10 table [{}] row :: {} '.format(tbl.table_name,row))
+							if col[1] == 'full_name' : row[cidx]=md.random_full_name()
+							if col[1] == 'dob'       : row[cidx]=md.random_date(1958,1985) 	 
+							if col[1] == 'dtetm'     : row[cidx]=md.random_date(2000,2018) 	 
+							if col[1] == 'address'   : row[cidx]=md.random_addr()			 	 
+							if col[1] == 'email'     : row[cidx]='email.' + str(global_vars.global_id) + '@email.com' 	 	
+							if col[1] == 'phone'     : row[cidx]=md.random_phone()         	 
+							if col[1] == 'int'       : row[cidx]=str(md.random_int(1000,10000))
+							if col[1] == 'amt500'    : row[cidx]=str(md.random_amt(10,500))
+							if col[1] == 'amt1000'   : row[cidx]=str(md.random_amt(510,1000))
+							if col[1] == 'vstr20'    : row[cidx]=str('S2' * 10)		 	        
+							if col[1] == 'vstr80'    : row[cidx]=str('S8' * 40)		 	        
+							if col[1] == 'vstr128'   : row[cidx]=str('S128' * 32)		 	    
+						cidx = cidx + 1	
+					tbl.rows.append(row)
+					doItAgain = doItAgain - 1
 		global_vars.incr_global_id()
-		#print(	global_vars.global_id )
+			
+		#print ('\nDo it again ...')
 	print ('\nnumber of rows per batch {} \n\n'.format(global_vars.global_id_batch_size))
 		
 		
@@ -640,11 +652,12 @@ def get_parms_missing(jsonParms):
 			r.append(g_domainData)	
 			
 		
+		'''
 		try: 
 			b = jsonParms['g_relationList']
 		except :
 			r.append('g_relationList')
-
+		'''
 		return r	
 
 	
@@ -657,6 +670,7 @@ if __name__ == '__main__':
 	
 	with open(sys.argv[1]) as f:
 		for l in f:
+			#print_and_split (l)
 			jsonParms = json.loads(l)
 	
 	err = get_parms_missing(jsonParms)

@@ -86,20 +86,23 @@
 	} // doTableToJSON
 	
 	
- function doGetColNum(tname,keyType) {
+ function doGetColNums(tname,keyType) {
     var tbl      = g_tableList[tname]  
     var c = 0
+	var o = {}
+	var to = {}
 	
 	while (c < tbl.length) {
 		
-		if (tbl[c][2] == keyType )
-			{ return c }
-		else
-			{ c = c + 1 }
+		if (tbl[c][2] == keyType ) { 
+		   to[tbl[c][0]] = tbl[c][2]
+		   Object.assign(o, to ) 
+		}
+		c = c + 1 
 		
 	} // while
 
-    return null
+    return o
 	
  } // doGetColNum
  
@@ -194,13 +197,21 @@ return tbl + '.' + keyCol[0] + '(' + keyCol[2] + ')'
 
 } // getTableKeyCol
 
+function objLength(obj) {
+var i = 0
+
+  for ( var x in obj) { i++; }
+  return i
+
+} // isEmpty
+
 function checkForRI() {
 // find all pk and pdk column names per table - put these in parent table
 // find all fk and fdk column names per table - add these to matching parent table  
 // if a table is not in either table error : that table has no relation
 // if a parent table has only the parent table error : that table has no relation
 
-	var c = 0
+	var cols = {}
 	var i = 0
 	var j = 0
 	var ptbl = ''
@@ -218,40 +229,51 @@ function checkForRI() {
 	for ( i=0; i<tList.length; i++) { 
 	  tname = tList[i]
 	  
-	  c = doGetColNum(tname,'PK') 
-	  if ( c != null ) { if (( tname in pList) == false ) {pList[tname] = g_tableList[tname][c] } else {pList[tname].push(g_tableList[tname][c])}}
+	  cols = doGetColNums(tname,'PK') 
+	  if (objLength(cols) > 0) { if ((tname in pList) == false) {pList[tname] = cols} else { Object.assign(pList[tname],cols) } }
+	  
+      cols = doGetColNums(tname,'PDK') 
+	  if (objLength(cols) > 0) { if ((tname in pList) == false) {pList[tname] = cols} else { Object.assign(pList[tname],cols) } }
 	
-      c = doGetColNum(tname,'PDK') 
-	  if ( c != null ) { if (( tname in pList) == false ) {pList[tname] = g_tableList[tname][c] } else {pList[tname].push(g_tableList[tname][c])}}
-	
-      c = doGetColNum(tname,'FK') 
-	  if ( c != null ) { if (( tname in fList) == false ) {fList[tname] = g_tableList[tname][c] } else {fList[tname].push(g_tableList[tname][c])}}
+      cols = doGetColNums(tname,'FK') 
+	  if (objLength(cols) > 0) { if ((tname in fList) == false) {fList[tname] = cols} else { Object.assign(fList[tname],cols) } }
 
-      c = doGetColNum(tname,'FDK') 
-	  if ( c != null ) { if (( tname in fList) == false ) {fList[tname] = g_tableList[tname][c] } else {fList[tname].push(g_tableList[tname][c])}}
-	
+      cols = doGetColNums(tname,'FDK') 
+	  if (objLength(cols) > 0) { if ((tname in fList) == false) {fList[tname] = cols} else { Object.assign(fList[tname],cols) } }
 	} // for 
 
 	
 	for ( ptbl in pList) { 
-	     
-	    colName = pList[ptbl][0]
-
-		for ( ftbl in fList ) {
-			if ( colName == fList[ftbl][0] ) {
-				if ((ptbl in riList) == false) {					
-					riList[ptbl] = [ftbl]
-				}
-				else
-				{
-				    riList[ptbl].push(ftbl)
-			    }
+	    for ( pcol in pList[ptbl] ) {
+			for ( ftbl in fList ) {
 			
-		   } // if colName
-		
-	    } // for ptbl
-	 
-	}
+				if ( pcol in fList[ftbl] ) {
+					if (( pList[ptbl][pcol] == 'PK' ) && ( fList[ftbl][pcol] == 'FK' )) {
+						if ((ptbl in riList) == false) {					
+							riList[ptbl] = [ftbl]
+						}
+						else
+						{
+							riList[ptbl].push(ftbl)
+						}
+					}
+				}
+				
+				if ( pcol in fList[ftbl] ) {
+					if (( pList[ptbl][pcol] == 'PDK' ) && ( fList[ftbl][pcol] == 'FDK' )) {	
+						if ((ptbl in riList) == false) {					
+							riList[ptbl] = [ftbl]
+						}
+						else
+						{
+							riList[ptbl].push(ftbl)
+						}
+					}
+				} 
+			}
+		}
+	}	
+	    
 	
 	//alert('riList key : ' + Object.keys(riList) )
 	//alert('riList val : ' + Object.values(riList) )
@@ -271,9 +293,10 @@ function checkForRI() {
     
 	for ( i=0; i<tList.length; i++) { 
         shw = shw + "<td>" + tList[i] + "</td>"
+		if ( (i+1) % 8 == 0 ) { shw = shw + '<tr>'}
 				//shw = shw + '<br>'
 	}
-	shw = shw + '</table><br>'
+	shw = shw + '</tr></table><br>'
 	document.getElementById('div_parentList').innerHTML = shw ;
 
 	//
@@ -281,18 +304,22 @@ function checkForRI() {
 	//
 	shw = "<b>Primary TABLES:</b><table border=1 id='childTables'>";	
 	shw = shw + "<tr>"
+	i = 0
     for ( ptbl in pList){ 
         shw = shw + "<td>" + ptbl + "</td>"
+		if ( ((i++)+1) % 8 == 0 ) { shw = shw + '<tr>'}
 	}
-	shw = shw + '</table><br>'
+	shw = shw + '</tr></table><br>'
 	document.getElementById('div_parentList').innerHTML = document.getElementById('div_parentList').innerHTML + shw ;
 	
 	shw = "<b>Foreign TABLES:</b><table border=1 id='childTables'>";	
 	shw = shw + "<tr>"
+	i = 0
     for ( ftbl in fList){ 
         shw = shw + "<td>" + ftbl + "</td>"
+		if ( ((i++)+1) % 8 == 0 ) { shw = shw + '<tr>'}
 	}
-	shw = shw + '</table><br>'
+	shw = shw + '</tr></table><br>'
 	document.getElementById('div_parentList').innerHTML = document.getElementById('div_parentList').innerHTML + shw ;
 	
 	
@@ -608,10 +635,11 @@ function doParameters() {
 	}
 	div.parentList{
    		width:  1000px;
-		height: 500px;
+		height: 550px;
 		margin: auto;
 		border: 3px solid #73AD21;
 		position: absolute; left: 50px; top: 75px; 
+		overflow: auto;
 	}
 			
 	div.menu {
@@ -619,7 +647,7 @@ function doParameters() {
 		height: 50px;
 		margin: auto;
 		border: 3px solid #73AD21;
-		position: absolute; left: 50px; top: 590px; 
+		position: absolute; left: 50px; top: 640px; 
 	}
 	
 	div.parentObj {
